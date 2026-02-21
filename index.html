@@ -1450,7 +1450,7 @@ function drawPreview() {
 function drawPasses() {
   const container = document.getElementById('pass-dots');
   container.innerHTML = '';
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 5; i++) {
     const dot = document.createElement('div');
     dot.className = 'pass-dot' + (i >= state.passes ? ' used' : '');
     container.appendChild(dot);
@@ -1942,7 +1942,7 @@ document.getElementById('play-btn').addEventListener('click', () => {
   updateBalanceDisplay();
 
   initGrid();
-  state.passes = 3;
+  state.passes = 5;
   state.rowsAdded = 0;
   state.currentColor = pickNextColor();  // top shooter'da bekliyor
   state.nextColor = pickNextColor();     // preview'de gösterilen
