@@ -466,7 +466,7 @@
   <!-- Header -->
   <div class="game-header">
     <div class="game-title">BUBBLE FORTUNE</div>
-    <div class="game-subtitle">★ ŞANS OYUNU ★</div>
+    <div class="game-subtitle">★ NOA GAMES ★</div>
     <div class="age-badge">18+</div>
     <button id="mute-btn" title="Sesi Aç/Kapat" style="
       position:absolute; top:10px; left:16px;
@@ -674,6 +674,8 @@ let state = {
   // --- Altın top sistemi ---
   goldenCount: 0,     // 0-3 arası sayaç
   isGoldenReady: false, // 3'e ulaşınca true — shooter altın topa döner
+  goldenFlashSlot: -1,  // hangi slot yeni doldu (flash animasyonu için)
+  goldenFlashTime: 0,   // flash başlangıç zamanı
 };
 
 // ============================================================
@@ -894,49 +896,100 @@ function drawGoldenCounter(ctx) {
   const count = state.goldenCount;
   const cx = 210, cy = 70;
 
-  // Sayacı topun hemen üstüne çiz — küçük pırlanta ikonları
+  // Flash animasyon hesabı
+  const FLASH_DURATION = 600; // ms
+  const flashAge = Date.now() - state.goldenFlashTime;
+  const flashProgress = Math.max(0, 1 - flashAge / FLASH_DURATION); // 1→0
+
   for (let i = 0; i < 3; i++) {
     const bx = cx - 22 + i * 22;
     const by = cy - BUBBLE_R - 18;
     const filled = i < count;
+    const isFlashing = (i === state.goldenFlashSlot && flashProgress > 0);
     ctx.save();
 
     if (filled) {
-      ctx.shadowColor = '#A8EEFF';
-      ctx.shadowBlur = 10;
-      // Dolmuş: küçük pırlanta kesimi
-      const s = 6.5;
+      // Flash beyaz halo — yeni doldu efekti
+      if (isFlashing) {
+        ctx.shadowColor = '#ffffff';
+        ctx.shadowBlur = 22 * flashProgress;
+        // Büyüyen halka
+        ctx.globalAlpha = flashProgress * 0.85;
+        ctx.beginPath();
+        ctx.arc(bx, by + 2, (6.5 + 10 * (1 - flashProgress)), 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255,255,255,' + flashProgress + ')';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      } else {
+        ctx.shadowColor = '#A8EEFF';
+        ctx.shadowBlur = 10;
+      }
+
+      // Pırlanta şekli
+      const s = isFlashing ? 6.5 + 1.5 * flashProgress : 6.5; // hafif büyür
       ctx.beginPath();
-      // Üst yatay kenar
       ctx.moveTo(bx - s*0.55, by - s*0.25);
       ctx.lineTo(bx + s*0.55, by - s*0.25);
-      // Sağ üst köşe
       ctx.lineTo(bx + s*0.85, by + s*0.1);
-      // Alt nokta
       ctx.lineTo(bx, by + s);
-      // Sol üst köşe
       ctx.lineTo(bx - s*0.85, by + s*0.1);
       ctx.closePath();
       const dg = ctx.createLinearGradient(bx, by - s, bx, by + s);
-      dg.addColorStop(0,   '#E8F8FF');
-      dg.addColorStop(0.3, '#7DD8FF');
-      dg.addColorStop(0.7, '#2090D0');
-      dg.addColorStop(1,   '#0A4080');
+      if (isFlashing) {
+        // Flash rengi — beyazdan maviye geçiş
+        dg.addColorStop(0,   `rgba(255,255,255,${0.5 + 0.5*flashProgress})`);
+        dg.addColorStop(0.3, '#A8EEFF');
+        dg.addColorStop(0.7, '#2090D0');
+        dg.addColorStop(1,   '#0A4080');
+      } else {
+        dg.addColorStop(0,   '#E8F8FF');
+        dg.addColorStop(0.3, '#7DD8FF');
+        dg.addColorStop(0.7, '#2090D0');
+        dg.addColorStop(1,   '#0A4080');
+      }
       ctx.fillStyle = dg;
       ctx.fill();
-      ctx.strokeStyle = 'rgba(200,245,255,0.8)';
-      ctx.lineWidth = 0.8;
+      ctx.strokeStyle = isFlashing
+        ? `rgba(255,255,255,${0.5 + 0.5*flashProgress})`
+        : 'rgba(200,245,255,0.8)';
+      ctx.lineWidth = isFlashing ? 1.5 : 0.8;
       ctx.stroke();
-      // İç çizgi (facet)
+      // İç facet çizgisi
       ctx.beginPath();
       ctx.moveTo(bx - s*0.55, by - s*0.25);
       ctx.lineTo(bx, by + s*0.2);
       ctx.lineTo(bx + s*0.55, by - s*0.25);
-      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.strokeStyle = isFlashing
+        ? `rgba(255,255,255,${0.6 * flashProgress})`
+        : 'rgba(255,255,255,0.35)';
       ctx.lineWidth = 0.5;
       ctx.stroke();
+
+      // Flash: 4 köşeli sparkle patlaması
+      if (isFlashing && flashProgress > 0.3) {
+        const sp = (flashProgress - 0.3) / 0.7;
+        ctx.globalAlpha = sp;
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = '#A8EEFF';
+        ctx.shadowBlur = 8;
+        const sz = s * 0.5 * sp;
+        ctx.beginPath();
+        ctx.moveTo(bx, by - sz*1.8);
+        ctx.lineTo(bx + sz*0.25, by - sz*0.25);
+        ctx.lineTo(bx + sz*1.8, by);
+        ctx.lineTo(bx + sz*0.25, by + sz*0.25);
+        ctx.lineTo(bx, by + sz*1.8);
+        ctx.lineTo(bx - sz*0.25, by + sz*0.25);
+        ctx.lineTo(bx - sz*1.8, by);
+        ctx.lineTo(bx - sz*0.25, by - sz*0.25);
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+
     } else {
-      // Boş: soluk outline
+      // Boş slot
       ctx.shadowBlur = 0;
       const s = 6.5;
       ctx.beginPath();
@@ -1397,7 +1450,7 @@ function drawPreview() {
 function drawPasses() {
   const container = document.getElementById('pass-dots');
   container.innerHTML = '';
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 3; i++) {
     const dot = document.createElement('div');
     dot.className = 'pass-dot' + (i >= state.passes ? ' used' : '');
     container.appendChild(dot);
@@ -1487,7 +1540,7 @@ function landProjectile(row, col) {
   const p = state.projectile;
   p.active = false;
 
-  // ---- PIRLANTA: Geniş alan patlaması → tur biter ----
+  // ---- PIRLANTA: Geniş alan patlaması ----
   if (p.isGolden) {
     triggerGoldenExplosion(row, col);
     return;
@@ -1503,10 +1556,8 @@ function landProjectile(row, col) {
   // Check cluster
   const cluster = findCluster(row, col);
   if (cluster.length >= 3) {
-    // Küme patla (görsel)
     popCluster(row, col);
 
-    // Çarpan çek
     const mult = pickMultiplier();
     const betAmt = BET_STEPS[state.betIndex];
     const winAmt = mult > 0 ? Math.round(betAmt * mult) : 0;
@@ -1521,11 +1572,9 @@ function landProjectile(row, col) {
       incrementGoldenCounter();
     }
 
-    // Tur bitti — kazanç göster, sonra idle'a dön
-    showWin(mult, winAmt);
+    showWin(mult, winAmt); // oyun devam eder
 
   } else {
-    // Eşleşme yok — misfire, tur devam eder
     if (checkGameOver()) return;
     misfire();
   }
@@ -1535,8 +1584,12 @@ function landProjectile(row, col) {
 // Altın sayaç artışı
 // ============================================================
 function incrementGoldenCounter() {
-  if (state.isGoldenReady) return; // zaten hazır
+  if (state.isGoldenReady) return;
+  const newSlot = state.goldenCount; // dolacak slot index'i (0-based)
   state.goldenCount++;
+  // Flash animasyonunu tetikle
+  state.goldenFlashSlot = newSlot;
+  state.goldenFlashTime = Date.now();
   if (state.goldenCount >= 3) {
     state.goldenCount = 3;
     state.isGoldenReady = true;
@@ -1680,14 +1733,12 @@ function showGoldenWin(mult, amt) {
     overlay.style.background = '';
     state.confetti = [];
     cc.clearRect(0, 0, CANVAS_W, CANVAS_H);
-    // Tur bitti — idle
-    state.phase = 'idle';
-    showInfoOverlay('💎 PIRLANTA!', fmtTL(amt) + ' kazandın!<br>Tekrar oynamak için <strong style="color:#A8EEFF">OYNA</strong>\'ya bas.');
+    state.phase = 'playing'; // oyun devam eder
   }, 3000);
 }
 
 // ============================================================
-// Misfire
+// Misfire — 3 hak sistemi
 // ============================================================
 function misfire() {
   state.projectile.active = false;
@@ -1696,12 +1747,9 @@ function misfire() {
   drawPasses();
 
   if (state.passes === 0) {
-    addRows();
-    state.rowsAdded++;
-    const newPasses = Math.max(2, 5 - state.rowsAdded);
-    state.passes = newPasses;
-    drawPasses();
-    if (checkGameOver()) return;
+    // 3 hak bitti → oyun bitti
+    triggerGameOver();
+    return;
   }
 
   state.phase = 'playing';
@@ -1736,7 +1784,7 @@ function showInfoOverlay(title, text) {
 }
 
 function triggerGameOver() {
-  state.phase = 'idle';
+  state.phase = 'gameover';
   if (winTimeout) clearTimeout(winTimeout);
   document.getElementById('win-overlay').classList.remove('show');
   playGameOver();
@@ -1767,16 +1815,14 @@ function addRows() {
 // ============================================================
 let winTimeout = null;
 function showWin(mult, amt) {
-  // Tek kazanç modeli: kazanç gösterilince TUR BİTER, idle'a geçer
-  state.phase = 'win';
-  const overlay = document.getElementById('win-overlay');
-
   if (mult === 0) {
-    // 0x — overlay yok, tur biter, OYNA tekrar basılabilir
-    state.phase = 'idle';
-    showInfoOverlay('🎰 TUR BİTTİ', 'Bu turda küme oluşturdun ama<br>çarpan <strong style="color:#FFD700">0X</strong> geldi.<br>Tekrar oynamak için <strong style="color:#FFD700">OYNA</strong>\'ya bas.');
+    // 0x — kazanç yok, sessizce devam
+    state.phase = 'playing';
     return;
   }
+
+  state.phase = 'win';
+  const overlay = document.getElementById('win-overlay');
 
   document.getElementById('win-mult-text').textContent = formatMult(mult) + 'X';
   document.getElementById('win-amount-text').textContent = fmtTL(amt) + ' KAZANDINIZ!';
@@ -1796,9 +1842,7 @@ function showWin(mult, amt) {
     overlay.classList.remove('show');
     state.confetti = [];
     cc.clearRect(0, 0, CANVAS_W, CANVAS_H);
-    // Tur bitti — idle'a geç, OYNA bekle
-    state.phase = 'idle';
-    showInfoOverlay('🎉 TUR BİTTİ', fmtTL(amt) + ' kazandın!<br>Tekrar oynamak için <strong style="color:#FFD700">OYNA</strong>\'ya bas.');
+    state.phase = 'playing'; // oyun devam eder
   }, 2000);
 }
 
@@ -1898,7 +1942,7 @@ document.getElementById('play-btn').addEventListener('click', () => {
   updateBalanceDisplay();
 
   initGrid();
-  state.passes = 5;
+  state.passes = 3;
   state.rowsAdded = 0;
   state.currentColor = pickNextColor();  // top shooter'da bekliyor
   state.nextColor = pickNextColor();     // preview'de gösterilen
@@ -1908,6 +1952,8 @@ document.getElementById('play-btn').addEventListener('click', () => {
   state.confetti = [];
   state.goldenCount = 0;
   state.isGoldenReady = false;
+  state.goldenFlashSlot = -1;
+  state.goldenFlashTime = 0;
   goldenShockwaves = [];
 
   playBgMusic(); // 🎵 Arka plan müziği başlat
