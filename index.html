@@ -155,35 +155,49 @@
   }
   #passes-display {
     position: absolute;
-    right: 24px;
+    right: 18px;
     top: 50%;
     transform: translateY(-50%);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
   }
   .pass-label {
     font-size: 9px;
-    color: rgba(255,215,0,0.5);
+    color: rgba(100,200,255,0.6);
     letter-spacing: 2px;
     text-transform: uppercase;
+    font-family: 'Rajdhani', sans-serif;
   }
-  .pass-dots {
+  #diamond-slots {
     display: flex;
-    gap: 4px;
+    flex-direction: column;
+    gap: 5px;
+    align-items: center;
   }
-  .pass-dot {
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 35% 35%, #c0c0c0, #606060);
-    box-shadow: 0 0 4px rgba(192,192,192,0.5);
-    transition: all 0.3s;
+  .diamond-slot {
+    width: 18px; height: 21px;
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.15s;
   }
-  .pass-dot.used {
-    background: radial-gradient(circle at 35% 35%, #2a1a3a, #150a20);
-    box-shadow: none;
-    opacity: 0.3;
+  .diamond-slot svg {
+    width: 18px; height: 21px;
+    overflow: visible;
+    filter: drop-shadow(0 0 0px transparent);
+    transition: filter 0.3s;
+  }
+  .diamond-slot.filled svg {
+    filter: drop-shadow(0 0 5px #A8EEFF);
+  }
+  .diamond-slot.flash {
+    animation: diamondFlash 0.6s ease-out forwards;
+  }
+  @keyframes diamondFlash {
+    0%   { transform: scale(1.6); filter: brightness(3) drop-shadow(0 0 8px #fff); }
+    40%  { transform: scale(1.2); filter: brightness(2) drop-shadow(0 0 5px #A8EEFF); }
+    100% { transform: scale(1);   filter: brightness(1); }
   }
   #shooter-canvas {
     position: absolute;
@@ -520,8 +534,8 @@
     <canvas id="shooter-canvas" width="420" height="90"></canvas>
 
     <div id="passes-display">
-      <div class="pass-label">KALAN HAK</div>
-      <div class="pass-dots" id="pass-dots"></div>
+      <div class="pass-label">PIRLANTA</div>
+      <div id="diamond-slots"></div>
     </div>
   </div>
 
@@ -661,7 +675,7 @@ let state = {
   projectile: null,   // {colorIndex, x, y, vx, vy, active}
   currentColor: 0,    // renk şu an shooter'da bekleyen top
   nextColor: 0,       // preview'de gösterilen sıradaki top
-  passes: 5,
+  passes: 0,          // kullanılmıyor — hak sistemi kaldırıldı
   balance: 1000,
   betIndex: 0,        // index into BET_STEPS — ₺5'ten başla
   phase: 'idle',      // 'idle' | 'playing' | 'shooting' | 'win' | 'gameover'
@@ -1425,15 +1439,13 @@ function drawShooter() {
   sc.stroke();
   sc.restore();
 
-  // ---- Ana top (altın mı normal mi?) ----
+  // ---- Ana top (pırlanta mı normal mi?) ----
   if (state.isGoldenReady) {
     drawGoldenBubble(sc, cx, cy, BUBBLE_R);
   } else {
     drawBubble(sc, cx, cy, BUBBLE_R, state.currentColor);
   }
-
-  // ---- Altın top sayacı ----
-  drawGoldenCounter(sc);
+  // (Pırlanta sayacı artık sağ panelde HTML olarak gösteriliyor)
 }
 
 // ============================================================
@@ -1447,13 +1459,34 @@ function drawPreview() {
 // ============================================================
 // Draw passes
 // ============================================================
-function drawPasses() {
-  const container = document.getElementById('pass-dots');
+function drawDiamondSlots(flashSlot = -1) {
+  const container = document.getElementById('diamond-slots');
+  if (!container) return;
   container.innerHTML = '';
-  for (let i = 0; i < 5; i++) {
-    const dot = document.createElement('div');
-    dot.className = 'pass-dot' + (i >= state.passes ? ' used' : '');
-    container.appendChild(dot);
+  for (let i = 0; i < 3; i++) {
+    const filled = i < state.goldenCount;
+    const div = document.createElement('div');
+    div.className = 'diamond-slot' + (filled ? ' filled' : '');
+    if (i === flashSlot) div.classList.add('flash');
+
+    // SVG pırlanta ikonu
+    const fillColor   = filled ? 'url(#dg' + i + ')' : 'rgba(100,200,255,0.08)';
+    const strokeColor = filled ? 'rgba(200,245,255,0.85)' : 'rgba(100,200,255,0.25)';
+    div.innerHTML = `<svg viewBox="-10 -10 20 24" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="dg${i}" x1="0" y1="-10" x2="0" y2="14" gradientUnits="userSpaceOnUse">
+          <stop offset="0%"   stop-color="#E8F8FF"/>
+          <stop offset="30%"  stop-color="#7DD8FF"/>
+          <stop offset="70%"  stop-color="#2090D0"/>
+          <stop offset="100%" stop-color="#0A4080"/>
+        </linearGradient>
+      </defs>
+      <polygon points="-5.5,-2.5 5.5,-2.5 8.5,1 0,14 -8.5,1"
+        fill="${fillColor}" stroke="${strokeColor}" stroke-width="0.8"/>
+      <polyline points="-5.5,-2.5 0,3 5.5,-2.5"
+        fill="none" stroke="rgba(255,255,255,${filled ? '0.35' : '0.1'})" stroke-width="0.5"/>
+    </svg>`;
+    container.appendChild(div);
   }
 }
 
@@ -1479,6 +1512,7 @@ function shoot() {
   if (isGolden) {
     state.isGoldenReady = false;
     state.goldenCount = 0;
+    drawDiamondSlots();
   }
 
   state.currentColor = state.nextColor;
@@ -1585,11 +1619,11 @@ function landProjectile(row, col) {
 // ============================================================
 function incrementGoldenCounter() {
   if (state.isGoldenReady) return;
-  const newSlot = state.goldenCount; // dolacak slot index'i (0-based)
+  const newSlot = state.goldenCount;
   state.goldenCount++;
-  // Flash animasyonunu tetikle
   state.goldenFlashSlot = newSlot;
   state.goldenFlashTime = Date.now();
+  drawDiamondSlots(newSlot); // HTML güncelle + flash
   if (state.goldenCount >= 3) {
     state.goldenCount = 3;
     state.isGoldenReady = true;
@@ -1738,20 +1772,11 @@ function showGoldenWin(mult, amt) {
 }
 
 // ============================================================
-// Misfire — 3 hak sistemi
+// Misfire — eşleşme olmadan top yerleşti, saha dolmaya devam eder
 // ============================================================
 function misfire() {
   state.projectile.active = false;
-  state.passes--;
-  if (state.passes < 0) state.passes = 0;
-  drawPasses();
-
-  if (state.passes === 0) {
-    // 3 hak bitti → oyun bitti
-    triggerGameOver();
-    return;
-  }
-
+  if (checkGameOver()) return;
   state.phase = 'playing';
 }
 
@@ -1942,7 +1967,7 @@ document.getElementById('play-btn').addEventListener('click', () => {
   updateBalanceDisplay();
 
   initGrid();
-  state.passes = 5;
+  
   state.rowsAdded = 0;
   state.currentColor = pickNextColor();  // top shooter'da bekliyor
   state.nextColor = pickNextColor();     // preview'de gösterilen
@@ -1955,6 +1980,7 @@ document.getElementById('play-btn').addEventListener('click', () => {
   state.goldenFlashSlot = -1;
   state.goldenFlashTime = 0;
   goldenShockwaves = [];
+  drawDiamondSlots();
 
   playBgMusic(); // 🎵 Arka plan müziği başlat
 
@@ -1965,7 +1991,7 @@ document.getElementById('play-btn').addEventListener('click', () => {
   infoOverlay.classList.add('hidden');
 
   document.getElementById('win-overlay').classList.remove('show');
-  drawPasses();
+  drawDiamondSlots();
   drawPreview();
 });
 
@@ -2010,7 +2036,7 @@ function gameLoop() {
 // ============================================================
 updateBalanceDisplay();
 updateBetDisplay();
-drawPasses();
+drawDiamondSlots();
 
 // Draw empty field preview
 initGrid();
