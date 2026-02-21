@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Bubble Fortune 🎰</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -16,8 +16,16 @@
     --neon-pink: #ff00aa;
     --panel: rgba(20,10,40,0.92);
     --border: rgba(255,215,0,0.3);
+    --game-w: 420px;  /* Oyunun tasarım genişliği */
   }
   * { margin:0; padding:0; box-sizing:border-box; }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    touch-action: none;
+  }
+
   body {
     background: var(--darker);
     font-family: 'Rajdhani', sans-serif;
@@ -25,7 +33,7 @@
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    overflow: hidden;
+    min-height: 100dvh;
     background-image:
       radial-gradient(ellipse at 20% 50%, rgba(100,0,180,0.15) 0%, transparent 60%),
       radial-gradient(ellipse at 80% 20%, rgba(0,100,200,0.1) 0%, transparent 50%),
@@ -52,6 +60,8 @@
     align-items: center;
     gap: 0;
     width: 420px;
+    /* Mobil ölçekleme JS ile transform-origin: top center yapılacak */
+    transform-origin: top center;
   }
 
   /* HEADER */
@@ -418,7 +428,7 @@
   <!-- Header -->
   <div class="game-header">
     <div class="game-title">BUBBLE FORTUNE</div>
-    <div class="game-subtitle">★ Made by NOA ★</div>
+    <div class="game-subtitle">★ NOA Games ★</div>
     <div class="age-badge">18+</div>
     <button id="mute-btn" title="Sesi Aç/Kapat" style="
       position:absolute; top:10px; left:16px;
@@ -1305,16 +1315,26 @@ function updateBetDisplay() {
 }
 
 // ============================================================
-// Aim handling
+// Aim handling — scale'e göre düzeltilmiş koordinatlar
 // ============================================================
+
+// getBoundingClientRect zaten scale uygulanmış koordinat döndürür,
+// ama canvas'ın internal boyutu değişmediği için oranlamak gerekir.
+function getScaledCoords(clientX, clientY, element, internalW, internalH) {
+  const rect = element.getBoundingClientRect();
+  const scaleX = internalW / rect.width;
+  const scaleY = internalH / rect.height;
+  return {
+    x: (clientX - rect.left) * scaleX,
+    y: (clientY - rect.top)  * scaleY,
+  };
+}
+
 mainCanvas.addEventListener('mousemove', (e) => {
   if (state.phase !== 'playing') return;
-  const rect = mainCanvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left;
-  const my = e.clientY - rect.top;
-  const shooterY = CANVAS_H - 20;
+  const { x: mx, y: my } = getScaledCoords(e.clientX, e.clientY, mainCanvas, CANVAS_W, CANVAS_H);
   const dx = mx - 210;
-  const dy = my - shooterY;
+  const dy = my - (CANVAS_H - 20);
   let angle = Math.atan2(dy, dx);
   angle = Math.max(-Math.PI + 0.2, Math.min(-0.2, angle));
   state.aimAngle = angle;
@@ -1322,9 +1342,7 @@ mainCanvas.addEventListener('mousemove', (e) => {
 
 shooterCanvas.addEventListener('mousemove', (e) => {
   if (state.phase !== 'playing') return;
-  const rect = shooterCanvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left;
-  const my = e.clientY - rect.top;
+  const { x: mx, y: my } = getScaledCoords(e.clientX, e.clientY, shooterCanvas, 420, 90);
   const dx = mx - 210;
   const dy = my - 70;
   let angle = Math.atan2(dy, dx);
@@ -1339,22 +1357,27 @@ shooterCanvas.addEventListener('click', (e) => {
   if (state.phase === 'playing') shoot();
 });
 
-// Touch
-mainCanvas.addEventListener('touchstart', (e) => {
+// Touch — hem aim hem shoot
+function handleTouch(e, element, internalW, internalH, shooterRelY) {
   e.preventDefault();
-  if (state.phase === 'playing') {
-    const touch = e.touches[0];
-    const rect = mainCanvas.getBoundingClientRect();
-    const mx = touch.clientX - rect.left;
-    const my = touch.clientY - rect.top;
-    const dx = mx - 210;
-    const dy = my - (CANVAS_H - 20);
-    let angle = Math.atan2(dy, dx);
-    angle = Math.max(-Math.PI + 0.2, Math.min(-0.2, angle));
-    state.aimAngle = angle;
-    shoot();
-  }
-}, {passive:false});
+  if (state.phase !== 'playing') return;
+  const touch = e.touches[0] || e.changedTouches[0];
+  const { x: mx, y: my } = getScaledCoords(touch.clientX, touch.clientY, element, internalW, internalH);
+  const dx = mx - 210;
+  const dy = my - shooterRelY;
+  let angle = Math.atan2(dy, dx);
+  angle = Math.max(-Math.PI + 0.2, Math.min(-0.2, angle));
+  state.aimAngle = angle;
+  shoot();
+}
+
+mainCanvas.addEventListener('touchstart', (e) => {
+  handleTouch(e, mainCanvas, CANVAS_W, CANVAS_H, CANVAS_H - 20);
+}, { passive: false });
+
+shooterCanvas.addEventListener('touchstart', (e) => {
+  handleTouch(e, shooterCanvas, 420, 90, 70);
+}, { passive: false });
 
 // ============================================================
 // Play button
@@ -1438,6 +1461,38 @@ drawPasses();
 initGrid();
 drawGrid();
 drawShooter();
+
+// ============================================================
+// Mobil Ölçekleme — oyunu her zaman ekrana sığdır
+// ============================================================
+function scaleGame() {
+  const wrapper = document.getElementById('game-wrapper');
+  const GAME_W = 420;
+
+  // Oyunun gerçek yüksekliğini ölç (render sonrası)
+  const GAME_H = wrapper.scrollHeight || 750;
+
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  // Hem genişliğe hem yüksekliğe göre scale hesapla, küçüğünü al
+  const scaleX = vw / GAME_W;
+  const scaleY = vh / GAME_H;
+  const scale  = Math.min(scaleX, scaleY, 1); // Masaüstünde 1'i geçme
+
+  wrapper.style.transform = `scale(${scale})`;
+  wrapper.style.transformOrigin = 'top center';
+
+  // Body'i dikeyde ortala (scale sonrası boşluk kalabilir)
+  const scaledH = GAME_H * scale;
+  const marginTop = Math.max(0, (vh - scaledH) / 2);
+  wrapper.style.marginTop = marginTop + 'px';
+}
+
+scaleGame();
+window.addEventListener('resize', scaleGame);
+// Mobilde adres çubuğu kaybolunca tekrar hesapla
+window.addEventListener('orientationchange', () => setTimeout(scaleGame, 300));
 
 gameLoop();
 </script>
