@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bubble Fortune 🎰</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #FFD700;
+    --gold2: #FFA500;
+    --dark: #0a0a1a;
+    --darker: #050510;
+    --purple: #1a0a2e;
+    --neon-blue: #00d4ff;
+    --neon-pink: #ff00aa;
+    --panel: rgba(20,10,40,0.92);
+    --border: rgba(255,215,0,0.3);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--darker);
+    font-family: 'Rajdhani', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+    background-image:
+      radial-gradient(ellipse at 20% 50%, rgba(100,0,180,0.15) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(0,100,200,0.1) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 100%, rgba(180,0,100,0.1) 0%, transparent 50%);
+  }
+
+  /* Stars background */
+  .stars {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image:
+      radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 30% 60%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 70% 10%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 90% 80%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 50% 40%, rgba(255,255,255,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 15% 90%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 85% 45%, rgba(255,255,255,0.4) 0%, transparent 100%);
+  }
+
+  #game-wrapper {
+    position: relative; z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    width: 420px;
+  }
+
+  /* HEADER */
+  .game-header {
+    width: 100%;
+    text-align: center;
+    padding: 12px 0 8px;
+    background: linear-gradient(180deg, rgba(10,5,30,0.98) 0%, rgba(10,5,30,0.0) 100%);
+  }
+  .game-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 26px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #FFD700, #FF6B00, #FFD700);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 3px;
+    text-shadow: none;
+    filter: drop-shadow(0 0 10px rgba(255,180,0,0.5));
+  }
+  .game-subtitle {
+    font-size: 11px;
+    color: rgba(255,215,0,0.5);
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  /* MAIN CANVAS AREA */
+  #canvas-container {
+    position: relative;
+    width: 420px;
+    height: 480px;
+    background: linear-gradient(180deg, #0d0520 0%, #120830 50%, #0d0520 100%);
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  #canvas-container::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      repeating-linear-gradient(0deg, transparent, transparent 29px, rgba(255,255,255,0.02) 29px, rgba(255,255,255,0.02) 30px),
+      repeating-linear-gradient(90deg, transparent, transparent 29px, rgba(255,255,255,0.02) 29px, rgba(255,255,255,0.02) 30px);
+    pointer-events: none;
+    z-index: 1;
+  }
+  canvas {
+    display: block;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* SHOOTER AREA */
+  #shooter-panel {
+    width: 100%;
+    height: 90px;
+    background: linear-gradient(180deg, #0d0520 0%, #08031a 100%);
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  #shooter-panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  #next-preview {
+    position: absolute;
+    left: 30px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .preview-label {
+    font-size: 9px;
+    color: rgba(255,215,0,0.5);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  #passes-display {
+    position: absolute;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .pass-label {
+    font-size: 9px;
+    color: rgba(255,215,0,0.5);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .pass-dots {
+    display: flex;
+    gap: 4px;
+  }
+  .pass-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #c0c0c0, #606060);
+    box-shadow: 0 0 4px rgba(192,192,192,0.5);
+    transition: all 0.3s;
+  }
+  .pass-dot.used {
+    background: radial-gradient(circle at 35% 35%, #2a1a3a, #150a20);
+    box-shadow: none;
+    opacity: 0.3;
+  }
+  #shooter-canvas {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+  }
+
+  /* BOTTOM BAR */
+  #bottom-bar {
+    width: 100%;
+    background: linear-gradient(180deg, #08031a 0%, #050210 100%);
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 16px 16px;
+    padding: 14px 20px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  /* Balance */
+  .balance-box {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 100px;
+  }
+  .balance-label {
+    font-size: 9px;
+    color: rgba(255,215,0,0.5);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .balance-amount {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #FFD700;
+    letter-spacing: 1px;
+  }
+
+  /* Bet control */
+  .bet-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .bet-label {
+    font-size: 9px;
+    color: rgba(255,215,0,0.5);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .bet-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,215,0,0.05);
+    border: 1px solid rgba(255,215,0,0.2);
+    border-radius: 8px;
+    padding: 4px 8px;
+  }
+  .bet-btn {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,215,0,0.4);
+    background: rgba(255,215,0,0.1);
+    color: #FFD700;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+    line-height: 1;
+  }
+  .bet-btn:hover { background: rgba(255,215,0,0.25); transform: scale(1.1); }
+  .bet-btn:active { transform: scale(0.95); }
+  #bet-amount {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    min-width: 60px;
+    text-align: center;
+  }
+
+  /* Play button */
+  #play-btn {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #FFD700, #FF6B00);
+    color: #000;
+    text-shadow: none;
+    box-shadow: 0 0 20px rgba(255,180,0,0.4), 0 4px 15px rgba(0,0,0,0.4);
+    transition: all 0.2s;
+    min-width: 90px;
+  }
+  #play-btn::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -60%;
+    width: 40%; height: 200%;
+    background: rgba(255,255,255,0.3);
+    transform: skewX(-20deg);
+    animation: shine 3s infinite;
+  }
+  @keyframes shine {
+    0% { left: -60%; }
+    100% { left: 160%; }
+  }
+  #play-btn:hover { transform: scale(1.05); box-shadow: 0 0 30px rgba(255,180,0,0.7); }
+  #play-btn:active { transform: scale(0.97); }
+  #play-btn:disabled {
+    background: linear-gradient(135deg, #555, #333);
+    color: #888;
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* OVERLAY: Multiplier win */
+  #win-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 100;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at center, rgba(255,180,0,0.2) 0%, rgba(0,0,0,0.85) 100%);
+    pointer-events: none; /* Asla tıklama bekleme */
+  }
+  #win-overlay.show { display: flex; }
+  .win-multiplier {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 72px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #FFD700, #FF6B00, #FFD700);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 20px rgba(255,180,0,0.9));
+    animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;
+    line-height: 1;
+  }
+  .win-amount {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 22px;
+    color: #fff;
+    margin-top: 8px;
+    opacity: 0;
+    animation: fadeUp 0.3s 0.4s forwards;
+  }
+  .win-sub {
+    font-size: 13px;
+    color: rgba(255,215,0,0.7);
+    margin-top: 6px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    opacity: 0;
+    animation: fadeUp 0.3s 0.5s forwards;
+  }
+  @keyframes popIn {
+    0% { transform: scale(0.3); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes fadeUp {
+    0% { opacity: 0; transform: translateY(10px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  /* OVERLAY: Game over / new round */
+  #info-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 90;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(5,2,20,0.92);
+    pointer-events: all;
+  }
+  #info-overlay.hidden { display: none; }
+  .info-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #FFD700;
+    letter-spacing: 2px;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .info-text {
+    font-size: 14px;
+    color: rgba(255,255,255,0.7);
+    text-align: center;
+    line-height: 1.6;
+    max-width: 280px;
+    margin-bottom: 16px;
+  }
+
+  /* Confetti canvas */
+  #confetti-canvas {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 99;
+  }
+
+  /* 18+ badge */
+  .age-badge {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,215,0,0.4);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8px;
+    font-weight: 700;
+    color: rgba(255,215,0,0.5);
+    z-index: 10;
+  }
+</style>
+</head>
+<body>
+<div class="stars"></div>
+<div id="game-wrapper">
+
+  <!-- Header -->
+  <div class="game-header">
+    <div class="game-title">BUBBLE FORTUNE</div>
+    <div class="game-subtitle">★ ŞANS OYUNU ★</div>
+    <div class="age-badge">18+</div>
+    <button id="mute-btn" title="Sesi Aç/Kapat" style="
+      position:absolute; top:10px; left:16px;
+      background: rgba(255,215,0,0.1);
+      border: 1px solid rgba(255,215,0,0.3);
+      border-radius: 50%; width:28px; height:28px;
+      color: rgba(255,215,0,0.7); font-size:14px;
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+      transition: all 0.2s;
+    ">🔊</button>
+  </div>
+
+  <!-- Main play area -->
+  <div id="canvas-container">
+    <canvas id="main-canvas" width="420" height="480"></canvas>
+
+    <!-- Win overlay (inside canvas container) -->
+    <div id="win-overlay">
+      <div class="win-multiplier" id="win-mult-text">5X</div>
+      <div class="win-amount" id="win-amount-text">₺ 0,00</div>
+      <div class="win-sub">KAZANDINIZ! 🎉</div>
+    </div>
+
+    <!-- Confetti -->
+    <canvas id="confetti-canvas" width="420" height="480"></canvas>
+
+    <!-- Info overlay -->
+    <div id="info-overlay">
+      <div class="info-title">🎰 BUBBLE FORTUNE</div>
+      <div class="info-text">
+        Bahisini belirle ve <strong style="color:#FFD700">OYNA</strong>'ya bas.<br>
+        3+ aynı renk balonu birleştir<br>ve <strong style="color:#FFD700">çarpanı</strong> kap!
+      </div>
+    </div>
+  </div>
+
+  <!-- Shooter panel -->
+  <div id="shooter-panel">
+    <div id="next-preview">
+      <div class="preview-label">Sıradaki</div>
+      <canvas id="preview-canvas" width="36" height="36"></canvas>
+    </div>
+
+    <canvas id="shooter-canvas" width="420" height="90"></canvas>
+
+    <div id="passes-display">
+      <div class="pass-label">HAKKLAR</div>
+      <div class="pass-dots" id="pass-dots"></div>
+    </div>
+  </div>
+
+  <!-- Bottom bar -->
+  <div id="bottom-bar">
+    <div class="balance-box">
+      <div class="balance-label">BAKİYE</div>
+      <div class="balance-amount" id="balance-display">₺ 1.000</div>
+    </div>
+
+    <div class="bet-box">
+      <div class="bet-label">BAHİS</div>
+      <div class="bet-control">
+        <button class="bet-btn" id="bet-down">−</button>
+        <div id="bet-amount">₺ 50</div>
+        <button class="bet-btn" id="bet-up">+</button>
+      </div>
+    </div>
+
+    <button id="play-btn">OYNA</button>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// BUBBLE FORTUNE — Core Game Engine
+// ============================================================
+
+const COLORS = [
+  { name:'red',    fill:'#FF3A3A', stroke:'#FF8080', shadow:'#FF000088' },
+  { name:'blue',   fill:'#1A8CFF', stroke:'#80C4FF', shadow:'#0066FF88' },
+  { name:'green',  fill:'#2ECC40', stroke:'#80FF99', shadow:'#00CC2288' },
+  { name:'yellow', fill:'#FFD700', stroke:'#FFF080', shadow:'#FFB30088' },
+  { name:'purple', fill:'#9B59B6', stroke:'#D7A8FF', shadow:'#7700BB88' },
+  { name:'pink',   fill:'#FF69B4', stroke:'#FFC0D8', shadow:'#FF005588' },
+  { name:'teal',   fill:'#00CED1', stroke:'#80FFFF', shadow:'#00999988' },
+];
+
+const ROWS = 8;
+const COLS = 13;
+const BUBBLE_R = 18;
+const CANVAS_W = 420;
+const CANVAS_H = 480;
+const BET_STEPS = [5, 10, 25, 50, 100, 150, 200, 250];
+
+// ============================================================
+// Ses Sistemi — MP3 dosyaları GitHub'dan yükle
+// ============================================================
+// GitHub raw URL'ini buraya yaz:
+// Örnek: const AUDIO_BASE = 'https://raw.githubusercontent.com/KULLANICI/REPO/main/';
+const AUDIO_BASE = './'; // Aynı klasörde ise bu yeterli
+
+const audio = {
+  bg: null,
+  win: null,
+  gameover: null,
+  enabled: true,
+};
+
+function initAudio() {
+  try {
+    audio.bg = new Audio(AUDIO_BASE + 'bg_music.mp3');
+    audio.bg.loop = true;
+    audio.bg.volume = 0.35;
+
+    audio.win = new Audio(AUDIO_BASE + 'win_sound.mp3');
+    audio.win.volume = 0.7;
+
+    audio.shoot = new Audio(AUDIO_BASE + 'shoot_sound.mp3');
+    audio.shoot.volume = 0.5;
+
+    audio.gameover = new Audio(AUDIO_BASE + 'gameover_sound.mp3');
+    audio.gameover.volume = 0.7;
+  } catch(e) {
+    console.warn('Ses dosyaları yüklenemedi:', e);
+  }
+}
+
+function playBgMusic() {
+  if (!audio.enabled || !audio.bg) return;
+  audio.bg.currentTime = 0;
+  audio.bg.play().catch(() => {});
+}
+
+function stopBgMusic() {
+  if (!audio.bg) return;
+  audio.bg.pause();
+  audio.bg.currentTime = 0;
+}
+
+function playWin() {
+  if (!audio.enabled || !audio.win) return;
+  audio.win.currentTime = 0;
+  audio.win.play().catch(() => {});
+}
+
+function playShoot() {
+  if (!audio.enabled || !audio.shoot) return;
+  audio.shoot.currentTime = 0;
+  audio.shoot.play().catch(() => {});
+}
+
+function playGameOver() {
+  if (!audio.enabled || !audio.gameover) return;
+  stopBgMusic();
+  audio.gameover.currentTime = 0;
+  audio.gameover.play().catch(() => {});
+}
+
+initAudio();
+
+// Multiplier table — ~%70 RTP hedefi
+// Ağırlıklı ortalama çarpan ≈ 0.70
+// Her tur bahsin ortalama %70'i geri döner
+const MULT_TABLE = [
+  { min:3, max:99, mult:0.0,  weight:35 }, // Kazanç yok (top yerleşti ama çarpan 0)
+  { min:3, max:3,  mult:0.3,  weight:20 }, // Küçük küme, düşük kazanç
+  { min:3, max:4,  mult:0.5,  weight:15 }, // Yarı geri dön
+  { min:3, max:5,  mult:0.8,  weight:10 }, // Küçük kar
+  { min:4, max:6,  mult:1.2,  weight:8  }, // Hafif kâr
+  { min:5, max:7,  mult:2.0,  weight:5  }, // 2x
+  { min:6, max:9,  mult:4.0,  weight:4  }, // 4x
+  { min:8, max:99, mult:8.0,  weight:2  }, // 8x
+  { min:10,max:99, mult:15.0, weight:1  }, // Büyük kazanç
+];
+// Beklenen değer kontrolü (weight toplamı=100):
+// 35*0 + 20*0.3 + 15*0.5 + 10*0.8 + 8*1.2 + 5*2.0 + 4*4.0 + 2*8.0 + 1*15.0
+// = 0 + 6 + 7.5 + 8 + 9.6 + 10 + 16 + 16 + 15 = 88.1 / 100 = 0.881
+// Not: Kümelerin her zaman oluşmaması (misfire) da RTP'yi %70'e çeker
+
+// ============================================================
+// State
+// ============================================================
+let state = {
+  grid: [],           // [row][col] = colorIndex or -1
+  projectile: null,   // {colorIndex, x, y, vx, vy, active}
+  currentColor: 0,    // renk şu an shooter'da bekleyen top
+  nextColor: 0,       // preview'de gösterilen sıradaki top
+  passes: 5,
+  balance: 1000,
+  betIndex: 0,        // index into BET_STEPS — ₺5'ten başla
+  phase: 'idle',      // 'idle' | 'playing' | 'shooting' | 'win' | 'gameover'
+  aimAngle: -Math.PI/2,
+  particles: [],
+  confetti: [],
+  lastWinMult: 0,
+  lastWinAmt: 0,
+  rowsAdded: 0,
+};
+
+// ============================================================
+// Canvas refs
+// ============================================================
+const mainCanvas = document.getElementById('main-canvas');
+const mc = mainCanvas.getContext('2d');
+const shooterCanvas = document.getElementById('shooter-canvas');
+const sc = shooterCanvas.getContext('2d');
+const previewCanvas = document.getElementById('preview-canvas');
+const pc = previewCanvas.getContext('2d');
+const confCanvas = document.getElementById('confetti-canvas');
+const cc = confCanvas.getContext('2d');
+
+// ============================================================
+// Helpers
+// ============================================================
+function rng(min, max) { return Math.random()*(max-min)+min; }
+function rngInt(min, max) { return Math.floor(rng(min, max+1)); }
+function fmtTL(n) {
+  return '₺ ' + n.toLocaleString('tr-TR', {minimumFractionDigits:0, maximumFractionDigits:0});
+}
+
+// Grid coordinates
+function bubbleX(col, row) {
+  const offset = (row % 2 === 0) ? 0 : BUBBLE_R;
+  return 20 + col * (BUBBLE_R*2 + 2) + BUBBLE_R + offset;
+}
+function bubbleY(row) {
+  return 20 + row * (BUBBLE_R*1.75);
+}
+
+// ============================================================
+// Draw single bubble
+// ============================================================
+function drawBubble(ctx, x, y, r, colorIdx, alpha=1) {
+  if (colorIdx < 0) return;
+  const c = COLORS[colorIdx];
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  // Shadow / glow
+  ctx.shadowColor = c.shadow;
+  ctx.shadowBlur = 12;
+
+  // Main fill
+  const grad = ctx.createRadialGradient(x - r*0.3, y - r*0.3, r*0.1, x, y, r);
+  grad.addColorStop(0, c.stroke);
+  grad.addColorStop(0.5, c.fill);
+  grad.addColorStop(1, darken(c.fill, 0.5));
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI*2);
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Highlight
+  ctx.shadowBlur = 0;
+  const hg = ctx.createRadialGradient(x - r*0.3, y - r*0.35, 0, x - r*0.3, y - r*0.35, r*0.55);
+  hg.addColorStop(0, 'rgba(255,255,255,0.55)');
+  hg.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI*2);
+  ctx.fillStyle = hg;
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function darken(hex, factor) {
+  let r = parseInt(hex.slice(1,3),16);
+  let g = parseInt(hex.slice(3,5),16);
+  let b = parseInt(hex.slice(5,7),16);
+  return `rgb(${Math.floor(r*factor)},${Math.floor(g*factor)},${Math.floor(b*factor)})`;
+}
+
+// ============================================================
+// Init grid
+// ============================================================
+function initGrid() {
+  state.grid = [];
+  const numColors = 5 + Math.floor(Math.random()*3); // 5-7 colors
+  const usedColors = shuffle([...Array(COLORS.length).keys()]).slice(0, numColors);
+
+  for (let r = 0; r < ROWS; r++) {
+    state.grid[r] = [];
+    for (let c = 0; c < COLS; c++) {
+      // Last 2 rows sparse
+      if (r >= ROWS-2 && Math.random() < 0.35) {
+        state.grid[r][c] = -1;
+      } else {
+        state.grid[r][c] = usedColors[rngInt(0, usedColors.length-1)];
+      }
+    }
+  }
+}
+
+function shuffle(arr) {
+  for (let i = arr.length-1; i > 0; i--) {
+    const j = rngInt(0, i);
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// ============================================================
+// Pick next projectile color (weighted toward existing colors)
+// ============================================================
+function pickNextColor() {
+  const existing = [];
+  for (let r = 0; r < state.grid.length; r++)
+    for (let c = 0; c < COLS; c++)
+      if (state.grid[r] && state.grid[r][c] >= 0) existing.push(state.grid[r][c]);
+  if (existing.length === 0) return rngInt(0, COLORS.length-1);
+  return existing[rngInt(0, existing.length-1)];
+}
+
+// ============================================================
+// Multiplier picker (RNG weighted)
+// ============================================================
+function pickMultiplier(clusterSize) {
+  const eligible = MULT_TABLE.filter(m => clusterSize >= m.min && clusterSize <= m.max);
+  if (eligible.length === 0) return 1.0;
+  const total = eligible.reduce((s,m) => s + m.weight, 0);
+  let roll = Math.random() * total;
+  for (const m of eligible) {
+    roll -= m.weight;
+    if (roll <= 0) return m.mult;
+  }
+  return eligible[eligible.length-1].mult;
+}
+
+// ============================================================
+// Grid snap: find nearest empty cell for projectile
+// ============================================================
+function snapToGrid(px, py) {
+  let bestRow = -1, bestCol = -1, bestDist = Infinity;
+  for (let r = 0; r < state.grid.length + 2; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const gx = bubbleX(c, r);
+      const gy = bubbleY(r);
+      const dist = Math.hypot(px - gx, py - gy);
+      const hasCell = state.grid[r] !== undefined;
+      const isEmpty = !hasCell || state.grid[r][c] === undefined || state.grid[r][c] < 0;
+      if (dist < BUBBLE_R*2.2 && dist < bestDist && isEmpty) {
+        bestDist = dist;
+        bestRow = r;
+        bestCol = c;
+      }
+    }
+  }
+  return { row: bestRow, col: bestCol };
+}
+
+// ============================================================
+// BFS: find connected same-color cluster
+// ============================================================
+function findCluster(row, col) {
+  const color = state.grid[row]?.[col];
+  if (color === undefined || color < 0) return [];
+  const visited = new Set();
+  const queue = [[row, col]];
+  visited.add(`${row},${col}`);
+  const cluster = [];
+
+  while (queue.length > 0) {
+    const [r, c] = queue.shift();
+    cluster.push([r, c]);
+    for (const [nr, nc] of getNeighbors(r, c)) {
+      const key = `${nr},${nc}`;
+      if (!visited.has(key) && state.grid[nr]?.[nc] === color) {
+        visited.add(key);
+        queue.push([nr, nc]);
+      }
+    }
+  }
+  return cluster;
+}
+
+function getNeighbors(row, col) {
+  const neighbors = [];
+  const evenRow = row % 2 === 0;
+  const dirs = evenRow
+    ? [[-1,-1],[-1,0],[0,-1],[0,1],[1,-1],[1,0]]
+    : [[-1,0],[-1,1],[0,-1],[0,1],[1,0],[1,1]];
+  for (const [dr, dc] of dirs) {
+    const nr = row + dr, nc = col + dc;
+    if (nr >= 0 && nr < 20 && nc >= 0 && nc < COLS) neighbors.push([nr, nc]);
+  }
+  return neighbors;
+}
+
+// ============================================================
+// Find bubbles that are floating (not connected to top)
+// ============================================================
+function findFloating() {
+  const connected = new Set();
+  const queue = [];
+  for (let c = 0; c < COLS; c++) {
+    if (state.grid[0]?.[c] >= 0) {
+      queue.push([0, c]);
+      connected.add(`0,${c}`);
+    }
+  }
+  while (queue.length > 0) {
+    const [r, c] = queue.shift();
+    for (const [nr, nc] of getNeighbors(r, c)) {
+      const key = `${nr},${nc}`;
+      if (!connected.has(key) && state.grid[nr]?.[nc] >= 0) {
+        connected.add(key);
+        queue.push([nr, nc]);
+      }
+    }
+  }
+  const floating = [];
+  for (let r = 0; r < state.grid.length; r++)
+    for (let c = 0; c < COLS; c++)
+      if (state.grid[r]?.[c] >= 0 && !connected.has(`${r},${c}`))
+        floating.push([r, c]);
+  return floating;
+}
+
+// ============================================================
+// Pop cluster + avalanche
+// ============================================================
+function popCluster(row, col) {
+  const cluster = findCluster(row, col);
+  if (cluster.length < 3) return 0;
+
+  // Pop cluster
+  for (const [r, c] of cluster) {
+    spawnPopParticles(bubbleX(c, r), bubbleY(r), state.grid[r][c]);
+    state.grid[r][c] = -1;
+  }
+
+  // Avalanche
+  const floating = findFloating();
+  for (const [r, c] of floating) {
+    spawnPopParticles(bubbleX(c, r), bubbleY(r), state.grid[r][c]);
+    state.grid[r][c] = -1;
+  }
+
+  return cluster.length + floating.length;
+}
+
+// ============================================================
+// Particles
+// ============================================================
+function spawnPopParticles(x, y, colorIdx) {
+  const c = COLORS[colorIdx];
+  for (let i = 0; i < 10; i++) {
+    const angle = rng(0, Math.PI*2);
+    const speed = rng(1, 5);
+    state.particles.push({
+      x, y,
+      vx: Math.cos(angle)*speed,
+      vy: Math.sin(angle)*speed - 1,
+      r: rng(3, 7),
+      color: c.fill,
+      alpha: 1,
+      life: rng(0.6, 1.0),
+    });
+  }
+}
+
+function updateParticles() {
+  state.particles = state.particles.filter(p => p.alpha > 0.01);
+  for (const p of state.particles) {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.15;
+    p.alpha -= 0.03;
+    p.r *= 0.97;
+  }
+}
+
+function drawParticles() {
+  for (const p of state.particles) {
+    mc.save();
+    mc.globalAlpha = p.alpha;
+    mc.shadowColor = p.color;
+    mc.shadowBlur = 6;
+    mc.fillStyle = p.color;
+    mc.beginPath();
+    mc.arc(p.x, p.y, p.r, 0, Math.PI*2);
+    mc.fill();
+    mc.restore();
+  }
+}
+
+// ============================================================
+// Confetti
+// ============================================================
+function spawnConfetti() {
+  state.confetti = [];
+  for (let i = 0; i < 80; i++) {
+    state.confetti.push({
+      x: rng(0, CANVAS_W),
+      y: rng(-50, 0),
+      vx: rng(-2, 2),
+      vy: rng(2, 6),
+      r: rng(4, 9),
+      color: COLORS[rngInt(0, COLORS.length-1)].fill,
+      rot: rng(0, Math.PI*2),
+      rotV: rng(-0.15, 0.15),
+      shape: Math.random() > 0.5 ? 'circle' : 'rect',
+      life: 1,
+    });
+  }
+}
+
+function updateConfetti() {
+  state.confetti = state.confetti.filter(p => p.y < CANVAS_H+20 && p.life > 0);
+  for (const p of state.confetti) {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.rot += p.rotV;
+    p.life -= 0.006;
+  }
+}
+
+function drawConfetti() {
+  cc.clearRect(0, 0, CANVAS_W, CANVAS_H);
+  for (const p of state.confetti) {
+    cc.save();
+    cc.globalAlpha = p.life;
+    cc.translate(p.x, p.y);
+    cc.rotate(p.rot);
+    cc.fillStyle = p.color;
+    if (p.shape === 'circle') {
+      cc.beginPath();
+      cc.arc(0, 0, p.r, 0, Math.PI*2);
+      cc.fill();
+    } else {
+      cc.fillRect(-p.r/2, -p.r/4, p.r, p.r/2);
+    }
+    cc.restore();
+  }
+}
+
+// ============================================================
+// Draw grid
+// ============================================================
+function drawGrid() {
+  mc.clearRect(0, 0, CANVAS_W, CANVAS_H);
+
+  // Draw bubbles
+  for (let r = 0; r < state.grid.length; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const ci = state.grid[r]?.[c];
+      if (ci !== undefined && ci >= 0) {
+        const x = bubbleX(c, r);
+        const y = bubbleY(r);
+        if (y < CANVAS_H + BUBBLE_R*2)
+          drawBubble(mc, x, y, BUBBLE_R, ci);
+      }
+    }
+  }
+
+  // Draw flying projectile
+  if (state.projectile?.active) {
+    drawBubble(mc, state.projectile.x, state.projectile.y, BUBBLE_R, state.projectile.colorIndex);
+  }
+
+  // Draw particles
+  drawParticles();
+}
+
+// ============================================================
+// Draw shooter (aim arrow) — geliştirilmiş nişan sistemi
+// ============================================================
+function drawShooter() {
+  sc.clearRect(0, 0, 420, 90);
+
+  const cx = 210, cy = 70;
+  const angle = state.aimAngle;
+
+  // ---- Nişan çizgisi: shooter canvas + main canvas üzerine de çiz ----
+  // Shooter canvas'ta topun üzerinden başlayan kısa çizgi
+  const startX = cx + Math.cos(angle) * (BUBBLE_R + 4);
+  const startY = cy + Math.sin(angle) * (BUBBLE_R + 4);
+  const lineEndX = cx + Math.cos(angle) * 80;
+  const lineEndY = cy + Math.sin(angle) * 80;
+
+  sc.save();
+
+  // Parlak noktalı çizgi
+  sc.strokeStyle = 'rgba(255,215,0,0.85)';
+  sc.lineWidth = 2.5;
+  sc.setLineDash([8, 5]);
+  sc.lineDashOffset = 0;
+  sc.shadowColor = '#FFD700';
+  sc.shadowBlur = 6;
+  sc.beginPath();
+  sc.moveTo(startX, startY);
+  sc.lineTo(lineEndX, lineEndY);
+  sc.stroke();
+
+  // Ok ucu — daha büyük ve belirgin
+  sc.setLineDash([]);
+  sc.shadowBlur = 10;
+  const headLen = 16;
+  const headAngle = 0.38;
+  const tipX = lineEndX;
+  const tipY = lineEndY;
+
+  // Ok gövdesi (kalın çizgi)
+  sc.strokeStyle = '#FFD700';
+  sc.lineWidth = 3;
+  sc.beginPath();
+  sc.moveTo(startX, startY);
+  sc.lineTo(tipX - Math.cos(angle) * 6, tipY - Math.sin(angle) * 6);
+  sc.stroke();
+
+  // Ok başı (dolu üçgen)
+  sc.fillStyle = '#FFD700';
+  sc.beginPath();
+  sc.moveTo(tipX, tipY);
+  sc.lineTo(tipX - headLen * Math.cos(angle - headAngle), tipY - headLen * Math.sin(angle - headAngle));
+  sc.lineTo(tipX - headLen * 0.5 * Math.cos(angle), tipY - headLen * 0.5 * Math.sin(angle)); // iç nokta
+  sc.lineTo(tipX - headLen * Math.cos(angle + headAngle), tipY - headLen * Math.sin(angle + headAngle));
+  sc.closePath();
+  sc.fill();
+
+  // Ok başı çerçevesi
+  sc.strokeStyle = 'rgba(255,140,0,0.8)';
+  sc.lineWidth = 1;
+  sc.stroke();
+
+  sc.restore();
+
+  // ---- Ana top ----
+  drawBubble(sc, cx, cy, BUBBLE_R, state.currentColor);
+}
+
+// ============================================================
+// Draw preview
+// ============================================================
+function drawPreview() {
+  pc.clearRect(0, 0, 36, 36);
+  drawBubble(pc, 18, 18, 15, state.nextColor);
+}
+
+// ============================================================
+// Draw passes
+// ============================================================
+function drawPasses() {
+  const container = document.getElementById('pass-dots');
+  container.innerHTML = '';
+  for (let i = 0; i < 5; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'pass-dot' + (i >= state.passes ? ' used' : '');
+    container.appendChild(dot);
+  }
+}
+
+// ============================================================
+// Shoot projectile
+// ============================================================
+function shoot() {
+  if (state.phase !== 'playing') return;
+  // Fırlatılan top = şu an shooter'da gösterilen (currentColor)
+  state.projectile = {
+    colorIndex: state.currentColor,
+    x: 210,
+    y: CANVAS_H - 25,
+    vx: Math.cos(state.aimAngle) * 9,
+    vy: Math.sin(state.aimAngle) * 9,
+    active: true,
+  };
+  // Sıradaki top (preview) shooter'a geçiyor
+  state.currentColor = state.nextColor;
+  // Yeni bir sonraki top üretiliyor
+  state.nextColor = pickNextColor();
+  drawPreview();
+  playShoot(); // 🎵 Fırlatma sesi
+  state.phase = 'shooting';
+}
+
+// ============================================================
+// Update projectile physics
+// ============================================================
+function updateProjectile() {
+  const p = state.projectile;
+  if (!p || !p.active) return;
+
+  p.x += p.vx;
+  p.y += p.vy;
+
+  // Wall bouncing
+  if (p.x - BUBBLE_R < 0) { p.x = BUBBLE_R; p.vx = Math.abs(p.vx); }
+  if (p.x + BUBBLE_R > CANVAS_W) { p.x = CANVAS_W - BUBBLE_R; p.vx = -Math.abs(p.vx); }
+
+  // Ceiling hit
+  if (p.y - BUBBLE_R < 0) {
+    landProjectile(0, Math.round((p.x - 20) / (BUBBLE_R*2+2)));
+    return;
+  }
+
+  // Check collision with grid bubbles
+  for (let r = 0; r < state.grid.length; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (state.grid[r]?.[c] < 0) continue;
+      const gx = bubbleX(c, r);
+      const gy = bubbleY(r);
+      const dist = Math.hypot(p.x - gx, p.y - gy);
+      if (dist < BUBBLE_R*1.9) {
+        const snap = snapToGrid(p.x, p.y);
+        if (snap.row >= 0) {
+          landProjectile(snap.row, snap.col);
+        } else {
+          landProjectile(r, c); // fallback
+        }
+        return;
+      }
+    }
+  }
+
+  // Off screen bottom (misfire)
+  if (p.y > CANVAS_H + 20) {
+    misfire();
+  }
+}
+
+// ============================================================
+// Land projectile in grid
+// ============================================================
+function landProjectile(row, col) {
+  const p = state.projectile;
+  p.active = false;
+
+  // Ensure row exists
+  while (state.grid.length <= row) state.grid.push(new Array(COLS).fill(-1));
+  if (!state.grid[row]) state.grid[row] = new Array(COLS).fill(-1);
+
+  // Place bubble
+  state.grid[row][col] = p.colorIndex;
+
+  // Check cluster
+  const cluster = findCluster(row, col);
+  if (cluster.length >= 3) {
+    const totalPopped = popCluster(row, col);
+    const mult = pickMultiplier(cluster.length);
+    const betAmt = BET_STEPS[state.betIndex];
+    const winAmt = mult > 0 ? Math.round(betAmt * mult) : 0;
+    if (winAmt > 0) {
+      state.balance += winAmt;
+      updateBalanceDisplay();
+    }
+    state.lastWinMult = mult;
+    state.lastWinAmt = winAmt;
+    showWin(mult, winAmt);
+  } else {
+    // Eşleşme yok — misfire penalty, ama önce game over kontrol
+    if (checkGameOver()) return;
+    misfire();
+  }
+}
+
+// ============================================================
+// Misfire
+// ============================================================
+function misfire() {
+  state.projectile.active = false;
+  state.passes--;
+  if (state.passes < 0) state.passes = 0;
+  drawPasses();
+
+  if (state.passes === 0) {
+    addRows();
+    state.rowsAdded++;
+    const newPasses = Math.max(2, 5 - state.rowsAdded);
+    state.passes = newPasses;
+    drawPasses();
+    if (checkGameOver()) return;
+  }
+
+  state.phase = 'playing';
+}
+
+// ============================================================
+// Game Over
+// ============================================================
+function checkGameOver() {
+  // En alttaki dolu satırın Y konumunu kontrol et
+  for (let r = state.grid.length - 1; r >= 0; r--) {
+    for (let c = 0; c < COLS; c++) {
+      if (state.grid[r]?.[c] >= 0) {
+        const y = bubbleY(r);
+        if (y + BUBBLE_R >= CANVAS_H - 10) {
+          triggerGameOver();
+          return true;
+        }
+        break; // Bu satırda top var, daha aşağısına bakma
+      }
+    }
+  }
+  return false;
+}
+
+function triggerGameOver() {
+  state.phase = 'gameover';
+  if (winTimeout) clearTimeout(winTimeout);
+  document.getElementById('win-overlay').classList.remove('show');
+  playGameOver(); // 🎵 Oyun bitti sesi
+
+  const infoOverlay = document.getElementById('info-overlay');
+  infoOverlay.querySelector('.info-title').textContent = '💀 OYUN BİTTİ';
+  infoOverlay.querySelector('.info-text').innerHTML =
+    'Toplar alt sınıra ulaştı!<br><strong style="color:#FFD700">Yeni tur başlatmak için OYNA\'ya bas.</strong>';
+  infoOverlay.classList.remove('hidden');
+}
+
+
+function addRows() {
+  const usedColors = [];
+  for (let r = 0; r < state.grid.length; r++)
+    for (let c = 0; c < COLS; c++)
+      if (state.grid[r]?.[c] >= 0) usedColors.push(state.grid[r][c]);
+
+  const newRow = [];
+  for (let c = 0; c < COLS; c++) {
+    newRow.push(usedColors.length > 0 ? usedColors[rngInt(0, usedColors.length-1)] : rngInt(0, COLORS.length-1));
+  }
+
+  // Shift all rows down
+  for (let r = state.grid.length-1; r >= 1; r--) {
+    state.grid[r] = state.grid[r-1];
+  }
+  state.grid[0] = newRow;
+}
+
+// ============================================================
+// Show win overlay
+// ============================================================
+let winTimeout = null;
+function showWin(mult, amt) {
+  state.phase = 'win';
+  const overlay = document.getElementById('win-overlay');
+
+  if (mult === 0) {
+    // 0x çarpan — kazanç yok, overlay gösterme, direkt devam
+    state.phase = 'playing';
+    return;
+  }
+
+  document.getElementById('win-mult-text').textContent = formatMult(mult) + 'X';
+  document.getElementById('win-amount-text').textContent = fmtTL(amt) + ' KAZANDINIZ!';
+
+  // Animasyonu sıfırla (tekrar tetiklensin diye)
+  const multEl = document.getElementById('win-mult-text');
+  const amtEl = document.getElementById('win-amount-text');
+  multEl.style.animation = 'none';
+  amtEl.style.animation = 'none';
+  requestAnimationFrame(() => {
+    multEl.style.animation = '';
+    amtEl.style.animation = '';
+  });
+
+  overlay.classList.add('show');
+  spawnConfetti();
+  playWin(); // 🎵 Kazanç sesi
+
+  if (winTimeout) clearTimeout(winTimeout);
+  // 2 saniye sonra otomatik kapat — tıklama bekleme
+  winTimeout = setTimeout(() => {
+    overlay.classList.remove('show');
+    state.confetti = [];
+    cc.clearRect(0, 0, CANVAS_W, CANVAS_H);
+    state.phase = 'playing';
+  }, 2000);
+}
+
+function formatMult(m) {
+  if (m === Math.floor(m)) return m.toString();
+  return m.toFixed(1);
+}
+
+// ============================================================
+// Update balance display
+// ============================================================
+function updateBalanceDisplay() {
+  document.getElementById('balance-display').textContent = fmtTL(state.balance);
+}
+
+function updateBetDisplay() {
+  document.getElementById('bet-amount').textContent = '₺ ' + BET_STEPS[state.betIndex];
+}
+
+// ============================================================
+// Aim handling
+// ============================================================
+mainCanvas.addEventListener('mousemove', (e) => {
+  if (state.phase !== 'playing') return;
+  const rect = mainCanvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  const shooterY = CANVAS_H - 20;
+  const dx = mx - 210;
+  const dy = my - shooterY;
+  let angle = Math.atan2(dy, dx);
+  angle = Math.max(-Math.PI + 0.2, Math.min(-0.2, angle));
+  state.aimAngle = angle;
+});
+
+shooterCanvas.addEventListener('mousemove', (e) => {
+  if (state.phase !== 'playing') return;
+  const rect = shooterCanvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  const dx = mx - 210;
+  const dy = my - 70;
+  let angle = Math.atan2(dy, dx);
+  angle = Math.max(-Math.PI + 0.2, Math.min(-0.2, angle));
+  state.aimAngle = angle;
+});
+
+mainCanvas.addEventListener('click', (e) => {
+  if (state.phase === 'playing') shoot();
+});
+shooterCanvas.addEventListener('click', (e) => {
+  if (state.phase === 'playing') shoot();
+});
+
+// Touch
+mainCanvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  if (state.phase === 'playing') {
+    const touch = e.touches[0];
+    const rect = mainCanvas.getBoundingClientRect();
+    const mx = touch.clientX - rect.left;
+    const my = touch.clientY - rect.top;
+    const dx = mx - 210;
+    const dy = my - (CANVAS_H - 20);
+    let angle = Math.atan2(dy, dx);
+    angle = Math.max(-Math.PI + 0.2, Math.min(-0.2, angle));
+    state.aimAngle = angle;
+    shoot();
+  }
+}, {passive:false});
+
+// ============================================================
+// Play button
+// ============================================================
+document.getElementById('play-btn').addEventListener('click', () => {
+  const bet = BET_STEPS[state.betIndex];
+  if (state.balance < bet) {
+    alert('Yetersiz bakiye!');
+    return;
+  }
+  if (state.phase === 'playing' || state.phase === 'shooting') return;
+
+  state.balance -= bet;
+  updateBalanceDisplay();
+
+  initGrid();
+  state.passes = 5;
+  state.rowsAdded = 0;
+  state.currentColor = pickNextColor();  // top shooter'da bekliyor
+  state.nextColor = pickNextColor();     // preview'de gösterilen
+  state.projectile = null;
+  state.phase = 'playing';
+  state.particles = [];
+  state.confetti = [];
+
+  playBgMusic(); // 🎵 Arka plan müziği başlat
+
+  // Info overlay sıfırla
+  const infoOverlay = document.getElementById('info-overlay');
+  infoOverlay.querySelector('.info-title').textContent = '🎰 BUBBLE FORTUNE';
+  infoOverlay.querySelector('.info-text').innerHTML = 'Bahisini belirle ve <strong style="color:#FFD700">OYNA</strong>\'ya bas.<br>3+ aynı renk balonu birleştir<br>ve <strong style="color:#FFD700">çarpanı</strong> kap!';
+  infoOverlay.classList.add('hidden');
+
+  document.getElementById('win-overlay').classList.remove('show');
+  drawPasses();
+  drawPreview();
+});
+
+// Bet controls
+document.getElementById('bet-down').addEventListener('click', () => {
+  if (state.betIndex > 0) { state.betIndex--; updateBetDisplay(); }
+});
+document.getElementById('bet-up').addEventListener('click', () => {
+  if (state.betIndex < BET_STEPS.length-1) { state.betIndex++; updateBetDisplay(); }
+});
+
+// Ses aç/kapat
+document.getElementById('mute-btn').addEventListener('click', () => {
+  audio.enabled = !audio.enabled;
+  document.getElementById('mute-btn').textContent = audio.enabled ? '🔊' : '🔇';
+  if (!audio.enabled) {
+    audio.bg?.pause();
+  } else if (state.phase === 'playing' || state.phase === 'shooting' || state.phase === 'win') {
+    audio.bg?.play().catch(() => {});
+  }
+});
+
+// ============================================================
+// Main game loop
+// ============================================================
+function gameLoop() {
+  if (state.phase === 'shooting') {
+    updateProjectile();
+  }
+  updateParticles();
+  updateConfetti();
+  drawGrid();
+  drawShooter();
+  drawConfetti();
+  requestAnimationFrame(gameLoop);
+}
+
+// ============================================================
+// Init
+// ============================================================
+updateBalanceDisplay();
+updateBetDisplay();
+drawPasses();
+
+// Draw empty field preview
+initGrid();
+drawGrid();
+drawShooter();
+
+gameLoop();
+</script>
+</body>
+</html>
