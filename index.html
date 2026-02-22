@@ -663,36 +663,38 @@ initAudio();
 //
 // Formül: RTP = P_cluster × E[mult|küme] + Pırlanta katkısı
 //
-// P_cluster (gerçekçi aralık): %38 - %46
-// E[mult|küme] = 1.77
+// P_cluster aralığı: %38 - %46
+// E[mult|küme] = 1.68
 //
 //   P=0.38 → RTP ≈ %70 ✅
 //   P=0.42 → RTP ≈ %77 ✅  ← beklenen ortalama
-//   P=0.46 → RTP ≈ %84
+//   P=0.46 → RTP ≈ %85
 //
-// Pırlanta E[mult]=2.10 → katkı ≈ %2.3/atış
-// Toplam beklenen RTP: ~%72-80
+// Pırlanta E[mult]=5.0 → katkı ≈ %6/atış
+// Toplam beklenen RTP: ~%74-80
 //
-// Monte Carlo (1M atış, P=0.42): %77.1 ✅
+// Monte Carlo (1M atış, P=0.42): %77.5 ✅
 //
-// YÜKSEk VARYANS HİSSİ:
-//   %50 küme → 0x  (sık kayıp, ama küçük)
-//   %45 küme → 3x  (güzel geri dönüş!)
-//   %3  küme → 6x  (büyük WOW anı!)
-//   %2  küme → 12x (nadir jackpot!)
+// YÜKSEK VARYANS HİSSİ:
+//   %40 küme → 0x   (kayıp)
+//   %35 küme → 2x   (geri dönüş)
+//   %20 küme → 3x   (güzel kazanç)
+//   %3  küme → 6x  ⚡ (büyük WOW!)
+//   %2  küme → 10x 🔥 (mega jackpot!)
 // ============================================================
 const MULT_TABLE = [
-  { mult: 0.0,  weight: 50 }, // Kayıp     — %50
-  { mult: 3.0,  weight: 45 }, // İyi geri  — %45
-  { mult: 6.0,  weight:  3 }, // Büyük     — %3
-  { mult: 12.0, weight:  2 }, // Jackpot   — %2
+  { mult: 0.0,  weight: 40 }, // Kayıp        — %40
+  { mult: 2.0,  weight: 35 }, // Geri dönüş   — %35
+  { mult: 3.0,  weight: 20 }, // Güzel kazanç — %20
+  { mult: 6.0,  weight:  3 }, // Büyük ⚡     — %3
+  { mult: 10.0, weight:  2 }, // Mega 🔥      — %2
 ];
-// E = 0×.50 + 3×.45 + 6×.03 + 12×.02 = 0+1.35+0.18+0.24 = 1.77 ✓
+// E = 0×.40 + 2×.35 + 3×.20 + 6×.03 + 10×.02 = 0+0.70+0.60+0.18+0.20 = 1.68 ✓
 
-// Pırlanta çarpanları — E[mult]=2.10
-// Net katkı per atış ≈ %2.3 (P=0.42 için)
-const DIAMOND_MULTS   = [1.5, 2.0, 2.5, 4.0];
-const DIAMOND_WEIGHTS = [40,  30,  20,  10 ];
+// Pırlanta çarpanları — E[mult]=5.0
+// 4x:%40, 5x:%30, 6x:%20, 7x:%10
+const DIAMOND_MULTS   = [4, 5, 6, 7];
+const DIAMOND_WEIGHTS = [40, 30, 20, 10];
 const P_DIAMOND_TRIGGER = 0.296;
 
 // ============================================================
@@ -1885,8 +1887,8 @@ function showWin(mult, amt) {
 
   state.phase = 'win';
   const overlay = document.getElementById('win-overlay');
-  const isBigWin   = mult >= 6.0 && mult < 12.0;
-  const isMegaWin  = mult >= 12.0;
+  const isBigWin   = mult >= 6.0 && mult < 10.0;
+  const isMegaWin  = mult >= 10.0;
 
   // Çarpan metni ve renk
   let multLabel = formatMult(mult) + 'X';
