@@ -655,23 +655,23 @@ function playGameOver() {
 
 initAudio();
 
-// Multiplier table — TEK KAZANÇ modeli, ~%70 normal RTP
-// E[mult | küme oluşur] ≈ 0.824
-// P(tur boyunca en az 1 küme) ≈ 0.85  →  RTP ≈ %70
+// Multiplier table — ATIŞ BAŞINA bahis modeli
+// Her atışta 1 birim düşer, küme patlarsa çarpan × bahis geri gelir.
+// E[mult | küme] = 1.600 — P(küme/atış) ≈ 0.45 → Normal RTP ≈ %72
+// Pırlanta katkısı ≈ %3.5 → Toplam hedef RTP ≈ %75.5
 const MULT_TABLE = [
-  { mult: 0.0,  weight: 25 }, // Kayıp
-  { mult: 0.4,  weight: 28 }, // Küçük geri dönüş
-  { mult: 0.6,  weight: 22 }, // Az kazanç
-  { mult: 0.9,  weight: 12 }, // Neredeyse başabaş
-  { mult: 1.5,  weight:  7 }, // Küçük kâr
-  { mult: 2.5,  weight:  4 }, // İyi kazanç
-  { mult: 5.0,  weight:  2 }, // Büyük kazanç
-  { mult: 10.0, weight:  1 }, // Jackpot
-]; // E[mult] ≈ 0.824 → Normal RTP ~%70, Pırlanta +%5 = Toplam ~%75
-// Pırlanta çarpanları — E[mult]=2.3, her ~46 turda 1 pırlanta → RTP katkı ~%5
+  { mult: 0.0,  weight: 35 }, // %35 — Kayıp
+  { mult: 1.0,  weight: 20 }, // %20 — Başabaş (bahsi geri al)
+  { mult: 1.5,  weight: 18 }, // %18 — Az kâr
+  { mult: 2.0,  weight: 12 }, // %12 — Kâr
+  { mult: 3.0,  weight:  8 }, // %8  — İyi kazanç
+  { mult: 5.0,  weight:  4 }, // %4  — Büyük kazanç
+  { mult: 10.0, weight:  2 }, // %2  — Çok büyük
+  { mult: 25.0, weight:  1 }, // %1  — Jackpot
+];
+// Pırlanta çarpanları — her ~120 atışta 1 → RTP katkı ~%2.3
 const DIAMOND_MULTS   = [1.5, 2.0, 3.0, 5.0];
 const DIAMOND_WEIGHTS = [40,  30,  20,  10 ];
-// 0x çıkınca pırlanta sayacı artma olasılığı ≈ 0.296
 const P_DIAMOND_TRIGGER = 0.296;
 
 // ============================================================
@@ -1503,6 +1503,16 @@ function drawDiamondSlots(flashSlot = -1) {
 function shoot() {
   if (state.phase !== 'playing') return;
 
+  // Her atışta bahis öde
+  const bet = BET_STEPS[state.betIndex];
+  if (state.balance < bet) {
+    // Bakiye yetersiz — oyun biter
+    triggerGameOver();
+    return;
+  }
+  state.balance -= bet;
+  updateBalanceDisplay();
+
   const isGolden = state.isGoldenReady;
 
   state.projectile = {
@@ -1515,7 +1525,6 @@ function shoot() {
     active: true,
   };
 
-  // Altın top atıldıysa sayacı sıfırla
   if (isGolden) {
     state.isGoldenReady = false;
     state.goldenCount = 0;
@@ -1980,9 +1989,8 @@ document.getElementById('play-btn').addEventListener('click', () => {
   }
   if (state.phase === 'playing' || state.phase === 'shooting' || state.phase === 'win') return;
 
-  state.balance -= bet;
-  updateBalanceDisplay();
-  setBetLocked(true); // Oyun başladı — bet kilitle
+  // Bakiye düşümü artık her atışta yapılıyor — burada sadece kilitle
+  setBetLocked(true);
 
   initGrid();
   
