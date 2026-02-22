@@ -263,6 +263,13 @@
     border: 1px solid rgba(255,215,0,0.2);
     border-radius: 8px;
     padding: 4px 8px;
+    transition: opacity 0.3s, filter 0.3s;
+  }
+  .bet-control.locked {
+    opacity: 0.35;
+    filter: grayscale(0.5);
+    pointer-events: none;
+    cursor: not-allowed;
   }
   .bet-btn {
     width: 24px; height: 24px;
@@ -480,7 +487,7 @@
   <!-- Header -->
   <div class="game-header">
     <div class="game-title">BUBBLE FORTUNE</div>
-    <div class="game-subtitle">★ NOA GAMES ★</div>
+    <div class="game-subtitle">★ ŞANS OYUNU ★</div>
     <div class="age-badge">18+</div>
     <button id="mute-btn" title="Sesi Aç/Kapat" style="
       position:absolute; top:10px; left:16px;
@@ -649,18 +656,18 @@ function playGameOver() {
 initAudio();
 
 // Multiplier table — TEK KAZANÇ modeli, ~%70 normal RTP
-// E[mult | küme oluşur] ≈ 0.865
-// P(tur boyunca en az 1 küme) ≈ 0.80  →  RTP ≈ %69
+// E[mult | küme oluşur] ≈ 0.824
+// P(tur boyunca en az 1 küme) ≈ 0.85  →  RTP ≈ %70
 const MULT_TABLE = [
-  { mult: 0.0,  weight: 22 }, // Kayıp
-  { mult: 0.5,  weight: 28 }, // Yarısı geri
-  { mult: 0.7,  weight: 20 }, // Az kazanç
-  { mult: 1.0,  weight: 14 }, // Başabaş
-  { mult: 1.5,  weight:  8 }, // Küçük kâr
-  { mult: 2.5,  weight:  5 }, // İyi kazanç
+  { mult: 0.0,  weight: 25 }, // Kayıp
+  { mult: 0.4,  weight: 28 }, // Küçük geri dönüş
+  { mult: 0.6,  weight: 22 }, // Az kazanç
+  { mult: 0.9,  weight: 12 }, // Neredeyse başabaş
+  { mult: 1.5,  weight:  7 }, // Küçük kâr
+  { mult: 2.5,  weight:  4 }, // İyi kazanç
   { mult: 5.0,  weight:  2 }, // Büyük kazanç
   { mult: 10.0, weight:  1 }, // Jackpot
-];
+]; // E[mult] ≈ 0.824 → Normal RTP ~%70, Pırlanta +%5 = Toplam ~%75
 // Pırlanta çarpanları — E[mult]=2.3, her ~46 turda 1 pırlanta → RTP katkı ~%5
 const DIAMOND_MULTS   = [1.5, 2.0, 3.0, 5.0];
 const DIAMOND_WEIGHTS = [40,  30,  20,  10 ];
@@ -1812,6 +1819,7 @@ function triggerGameOver() {
   state.phase = 'gameover';
   if (winTimeout) clearTimeout(winTimeout);
   document.getElementById('win-overlay').classList.remove('show');
+  setBetLocked(false); // Tur bitti — bet kilidi aç
   playGameOver();
   showInfoOverlay('💀 OYUN BİTTİ', 'Toplar alt sınıra ulaştı!<br><strong style="color:#FFD700">Yeni tur için OYNA\'ya bas.</strong>');
 }
@@ -1885,6 +1893,15 @@ function updateBalanceDisplay() {
 
 function updateBetDisplay() {
   document.getElementById('bet-amount').textContent = '₺ ' + BET_STEPS[state.betIndex];
+}
+
+function setBetLocked(locked) {
+  const ctrl = document.querySelector('.bet-control');
+  if (locked) {
+    ctrl.classList.add('locked');
+  } else {
+    ctrl.classList.remove('locked');
+  }
 }
 
 // ============================================================
@@ -1965,6 +1982,7 @@ document.getElementById('play-btn').addEventListener('click', () => {
 
   state.balance -= bet;
   updateBalanceDisplay();
+  setBetLocked(true); // Oyun başladı — bet kilitle
 
   initGrid();
   
@@ -1997,9 +2015,11 @@ document.getElementById('play-btn').addEventListener('click', () => {
 
 // Bet controls
 document.getElementById('bet-down').addEventListener('click', () => {
+  if (state.phase === 'playing' || state.phase === 'shooting' || state.phase === 'win') return;
   if (state.betIndex > 0) { state.betIndex--; updateBetDisplay(); }
 });
 document.getElementById('bet-up').addEventListener('click', () => {
+  if (state.phase === 'playing' || state.phase === 'shooting' || state.phase === 'win') return;
   if (state.betIndex < BET_STEPS.length-1) { state.betIndex++; updateBetDisplay(); }
 });
 
