@@ -153,51 +153,71 @@
     letter-spacing: 2px;
     text-transform: uppercase;
   }
+  /* Pırlanta sayacı — shooter-canvas altında yatay */
   #passes-display {
     position: absolute;
-    right: 18px;
-    top: 50%;
-    transform: translateY(-50%);
+    bottom: 6px;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
+    z-index: 4;
   }
   .pass-label {
-    font-size: 9px;
-    color: rgba(100,200,255,0.6);
+    font-size: 8px;
+    color: rgba(100,200,255,0.55);
     letter-spacing: 2px;
     text-transform: uppercase;
     font-family: 'Rajdhani', sans-serif;
   }
   #diamond-slots {
     display: flex;
-    flex-direction: column;
-    gap: 5px;
+    flex-direction: row;
+    gap: 10px;
     align-items: center;
   }
   .diamond-slot {
-    width: 18px; height: 21px;
+    width: 20px; height: 24px;
     position: relative;
     display: flex; align-items: center; justify-content: center;
     transition: transform 0.15s;
   }
   .diamond-slot svg {
-    width: 18px; height: 21px;
+    width: 20px; height: 24px;
     overflow: visible;
     filter: drop-shadow(0 0 0px transparent);
     transition: filter 0.3s;
   }
   .diamond-slot.filled svg {
-    filter: drop-shadow(0 0 5px #A8EEFF);
+    filter: drop-shadow(0 0 6px #A8EEFF);
   }
   .diamond-slot.flash {
-    animation: diamondFlash 0.6s ease-out forwards;
+    animation: diamondFlash 0.7s ease-out forwards;
   }
   @keyframes diamondFlash {
-    0%   { transform: scale(1.6); filter: brightness(3) drop-shadow(0 0 8px #fff); }
-    40%  { transform: scale(1.2); filter: brightness(2) drop-shadow(0 0 5px #A8EEFF); }
+    0%   { transform: scale(2.2); filter: brightness(5) drop-shadow(0 0 14px #fff); }
+    35%  { transform: scale(1.5); filter: brightness(2.5) drop-shadow(0 0 8px #A8EEFF); }
     100% { transform: scale(1);   filter: brightness(1); }
+  }
+
+  /* Pırlanta kazanıldı — tüm oyun alanı pulse efekti */
+  #diamond-pulse {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10;
+    border-radius: 12px;
+    opacity: 0;
+  }
+  #diamond-pulse.active {
+    animation: diamondPulse 0.8s ease-out forwards;
+  }
+  @keyframes diamondPulse {
+    0%   { opacity: 1; box-shadow: inset 0 0 80px 30px rgba(80,210,255,0.60); }
+    50%  { opacity: 1; box-shadow: inset 0 0 120px 60px rgba(80,210,255,0.25); }
+    100% { opacity: 0; box-shadow: inset 0 0 0px   0px rgba(80,210,255,0.00); }
   }
   #shooter-canvas {
     position: absolute;
@@ -487,7 +507,7 @@
   <!-- Header -->
   <div class="game-header">
     <div class="game-title">BUBBLE FORTUNE</div>
-    <div class="game-subtitle">★ NOA GAMES ★</div>
+    <div class="game-subtitle">★ ŞANS OYUNU ★</div>
     <div class="age-badge">18+</div>
     <button id="mute-btn" title="Sesi Aç/Kapat" style="
       position:absolute; top:10px; left:16px;
@@ -518,6 +538,9 @@
       <div class="golden-alert-sub">Ateşle ve büyük kazan!</div>
     </div>
 
+    <!-- Pırlanta ekran pulse efekti -->
+    <div id="diamond-pulse"></div>
+
     <!-- Confetti -->
     <canvas id="confetti-canvas" width="420" height="480"></canvas>
 
@@ -540,6 +563,7 @@
 
     <canvas id="shooter-canvas" width="420" height="90"></canvas>
 
+    <!-- Pırlanta sayacı — yatay, shooter altında ortada -->
     <div id="passes-display">
       <div class="pass-label">PIRLANTA</div>
       <div id="diamond-slots"></div>
@@ -1663,11 +1687,22 @@ function incrementGoldenCounter() {
   state.goldenFlashSlot = newSlot;
   state.goldenFlashTime = Date.now();
   drawDiamondSlots(newSlot); // HTML güncelle + flash
+  triggerDiamondPulse();     // Ekran pulse efekti
   if (state.goldenCount >= 3) {
     state.goldenCount = 3;
     state.isGoldenReady = true;
     showGoldenReadyAlert();
   }
+}
+
+function triggerDiamondPulse() {
+  const el = document.getElementById('diamond-pulse');
+  if (!el) return;
+  // Animasyonu sıfırla ve yeniden tetikle
+  el.classList.remove('active');
+  void el.offsetWidth; // reflow
+  el.classList.add('active');
+  setTimeout(() => el.classList.remove('active'), 900);
 }
 
 function showGoldenReadyAlert() {
