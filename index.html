@@ -758,17 +758,19 @@ async function loadBalance() {
 //   },
 //   isGolden: false      — bu spin pırlanta topuydu mu?
 // }
-async function callSpin(bet, clustered, clusterSize, isGolden) {
+// GÜVENLİK: Frontend sadece bet gönderir.
+// Backend P_cluster ile clustered/isGolden kararını kendisi verir.
+// Dönen { clustered, isGolden } değerleri yalnızca animasyon içindir.
+async function callSpin(bet) {
   if (DEV_MODE) {
-    // Dev modda client-side simülasyon (backend olmadan test)
-    return devModeSpin(bet, clustered, isGolden);
+    return devModeSpin(bet);
   }
 
   setSpinnerVisible(true);
   try {
     const data = await apiFetch('/game/spin', {
       method: 'POST',
-      body: JSON.stringify({ bet, clustered, clusterSize, isGolden }),
+      body: JSON.stringify({ bet }),
     });
     return data;
   } finally {
@@ -776,41 +778,49 @@ async function callSpin(bet, clustered, clusterSize, isGolden) {
   }
 }
 
-// Dev modda backend'siz simülasyon (gerçek RTP mantığı yok, sadece test amaçlı)
-function devModeSpin(bet, clustered, isGolden) {
-  if (isGolden) {
-    const mults = [4,5,6,7];
-    const mult = mults[Math.floor(Math.random() * mults.length)];
-    const winAmount = Math.round(bet * mult);
-    state.balance = Math.max(0, state.balance - bet + winAmount);
-    return { mult, winAmount, balance: state.balance,
-             diamond: { count: 0, ready: false }, isGolden: true };
-  }
+// Dev modda backend'siz simülasyon — backend ile aynı P_cluster=0.26 mantığı
+function devModeSpin(bet) {
+  const P_CLUSTER = 0.26;
+  const P_DIAMOND = 0.296;
+  const DIAMONDS_NEEDED = 3;
+
+  const isGolden = state.goldenCount >= DIAMONDS_NEEDED;
+  const clustered = !isGolden && (Math.random() < P_CLUSTER);
+
   state.balance = Math.max(0, state.balance - bet);
-  if (!clustered) {
-    // Pırlanta sayacını %29.6 ihtimalle artır
-    let diamondCount = state.goldenCount;
-    let diamondReady = state.isGoldenReady;
-    if (!diamondReady && Math.random() < 0.296) {
-      diamondCount = Math.min(3, diamondCount + 1);
-      diamondReady = diamondCount >= 3;
-    }
-    return { mult: 0, winAmount: 0, balance: state.balance,
-             diamond: { count: diamondCount, ready: diamondReady }, isGolden: false };
+
+  if (isGolden) {
+    // Pırlanta ödülü
+    const mults = [4,5,6,7], weights = [40,30,20,10];
+    const total = weights.reduce((a,b)=>a+b,0);
+    let roll = Math.random()*total, mult = 4;
+    for(let i=0;i<mults.length;i++){roll-=weights[i];if(roll<=0){mult=mults[i];break;}}
+    const winAmount = Math.round(bet * mult);
+    state.balance += winAmount;
+    return { clustered: false, isGolden: true, mult, winAmount, balance: state.balance,
+             diamond: { count: 0, ready: false } };
   }
-  // Cluster var: çarpan seç
-  const table = [
-    { mult: 0,  w: 40 }, { mult: 2,  w: 35 },
-    { mult: 3,  w: 20 }, { mult: 6,  w:  3 }, { mult: 10, w: 2 },
-  ];
-  const total = table.reduce((s,m) => s + m.w, 0);
-  let roll = Math.random() * total;
-  let mult = 0;
-  for (const m of table) { roll -= m.w; if (roll <= 0) { mult = m.mult; break; } }
-  const winAmount = Math.round(bet * mult);
-  state.balance += winAmount;
-  return { mult, winAmount, balance: state.balance,
-           diamond: { count: state.goldenCount, ready: state.isGoldenReady }, isGolden: false };
+
+  if (clustered) {
+    // Küme ödülü
+    const table = [{mult:0,w:40},{mult:2,w:35},{mult:3,w:20},{mult:6,w:3},{mult:10,w:2}];
+    const total = table.reduce((s,m)=>s+m.w,0);
+    let roll = Math.random()*total, mult = 0;
+    for(const m of table){roll-=m.w;if(roll<=0){mult=m.mult;break;}}
+    const winAmount = Math.round(bet * mult);
+    state.balance += winAmount;
+    return { clustered: true, isGolden: false, mult, winAmount, balance: state.balance,
+             diamond: { count: state.goldenCount, ready: false } };
+  }
+
+  // Misfire — pırlanta şansı
+  let newCount = state.goldenCount;
+  if (newCount < DIAMONDS_NEEDED && Math.random() < P_DIAMOND) {
+    newCount = Math.min(DIAMONDS_NEEDED, newCount + 1);
+  }
+  const ready = newCount >= DIAMONDS_NEEDED;
+  return { clustered: false, isGolden: false, mult: 0, winAmount: 0, balance: state.balance,
+           diamond: { count: newCount, ready } };
 }
 
 // ── UI HELPERS ────────────────────────────────────────────────────────────────
@@ -1319,6 +1329,8 @@ async function landProjectile(row,col){
   const p=state.projectile;
   p.active=false;
 
+  // Altın top animasyonu görsel olarak oynuyor (patlatma efekti)
+  // Ama spin API'si her zaman çağrılır (pırlanta atışı da bir spin = bir bet)
   if(p.isGolden){
     await triggerGoldenExplosion(row,col);
     return;
@@ -1328,19 +1340,18 @@ async function landProjectile(row,col){
   if(!state.grid[row])state.grid[row]=new Array(COLS).fill(-1);
   state.grid[row][col]=p.colorIndex;
 
-  const{count:popped,cluster}=popCluster(row,col);
+  // Görsel küme tespiti — sadece animasyon için (balonu patlat)
+  const{count:popped}=popCluster(row,col);
   const bet=BET_STEPS[state.betIndex];
-  const clustered=popped>=3;
 
-  // Backend'e spin gönder
+  // Backend'e sadece bet gönder — clustered/isGolden kararı backend'de
   state.phase='waitingApi';
   let spinResult=null;
   try{
-    spinResult=await callSpin(bet,clustered,popped,false);
+    spinResult=await callSpin(bet);
   }catch(err){
     if(err.message==='SESSION_EXPIRED')return;
     showError('Bağlantı hatası — tekrar deniyor...');
-    // Hata durumunda misfire gibi davran ama bakiyeyi düşme
     state.phase='playing';
     if(checkGameOver())return;
     return;
@@ -1352,20 +1363,27 @@ async function landProjectile(row,col){
   state.balance=parseFloat(spinResult.balance)||state.balance;
   updateBalanceDisplay();
 
-  // Pırlanta state'ini senkronize et
+  // Pırlanta state'ini backend kararıyla senkronize et
   syncDiamondState(spinResult.diamond);
 
   const mult=spinResult.mult||0;
   const winAmount=spinResult.winAmount||0;
 
-  if(clustered&&mult>0){
+  // ANİMASYON KARARI: backend'den gelen clustered/isGolden'a göre
+  // (frontend'in popped>=3 tespiti değil)
+  const backendClustered = spinResult.clustered || false;
+
+  if(backendClustered && mult>0){
+    // Backend küme onayladı VE kazanç var
     showWin(mult,winAmount);
-  }else if(clustered&&mult===0){
-    // Cluster var ama 0x çıktı
+  }else if(backendClustered && mult===0){
+    // Backend küme onayladı ama 0x çıktı (kayıp küme)
+    // Görsel balon patlaması zaten yapıldı (popCluster çağrıldı)
     state.phase='playing';
     if(checkGameOver())return;
   }else{
-    // Misfire
+    // Backend misfire dedi — balon patlatılmadıysa ızgaraya bırak
+    // (popCluster hiç patlayacak bulamamış olabilir, sorun değil)
     if(checkGameOver())return;
     state.phase='playing';
   }
@@ -1427,7 +1445,8 @@ async function triggerGoldenExplosion(centerRow,centerCol){
   state.phase='waitingApi';
   let spinResult=null;
   try{
-    spinResult=await callSpin(bet,true,popped,true);
+    // Backend isGolden=true olduğunu session'daki diamond_count>=3'ten biliyor
+    spinResult=await callSpin(bet);
   }catch(err){
     if(err.message==='SESSION_EXPIRED')return;
     showError('Bağlantı hatası');
