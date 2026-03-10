@@ -16,7 +16,7 @@
     --neon-pink: #ff00aa;
     --panel: rgba(20,10,40,0.92);
     --border: rgba(255,215,0,0.3);
-    --game-w: 420px;  /* Oyunun tasarım genişliği */
+    --game-w: 420px;
   }
   * { margin:0; padding:0; box-sizing:border-box; }
 
@@ -40,7 +40,6 @@
       radial-gradient(ellipse at 50% 100%, rgba(180,0,100,0.1) 0%, transparent 50%);
   }
 
-  /* Stars background */
   .stars {
     position: fixed; inset: 0; pointer-events: none; z-index: 0;
     background-image:
@@ -60,7 +59,6 @@
     align-items: center;
     gap: 0;
     width: 420px;
-    /* Mobil ölçekleme JS ile transform-origin: top center yapılacak */
     transform-origin: top center;
   }
 
@@ -153,7 +151,6 @@
     letter-spacing: 2px;
     text-transform: uppercase;
   }
-  /* Pırlanta sayacı — shooter-canvas sağında yatay */
   #passes-display {
     position: absolute;
     right: 18px;
@@ -202,7 +199,6 @@
     100% { transform: scale(1);   filter: brightness(1); }
   }
 
-  /* Pırlanta kazanıldı — tüm oyun alanı pulse efekti */
   #diamond-pulse {
     position: absolute;
     inset: 0;
@@ -241,7 +237,6 @@
     gap: 12px;
   }
 
-  /* Balance */
   .balance-box {
     display: flex;
     flex-direction: column;
@@ -260,9 +255,12 @@
     font-weight: 700;
     color: #FFD700;
     letter-spacing: 1px;
+    transition: color 0.3s;
+  }
+  .balance-amount.loading {
+    color: rgba(255,215,0,0.4);
   }
 
-  /* Bet control */
   .bet-box {
     display: flex;
     flex-direction: column;
@@ -315,7 +313,6 @@
     text-align: center;
   }
 
-  /* Play button */
   #play-btn {
     font-family: 'Orbitron', sans-serif;
     font-size: 13px;
@@ -357,7 +354,81 @@
     transform: none;
   }
 
-  /* OVERLAY: Multiplier win */
+  /* ── API Yükleme spinner ── */
+  #api-spinner {
+    position: absolute;
+    inset: 0;
+    z-index: 200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(5,2,20,0.7);
+    pointer-events: all;
+  }
+  #api-spinner.show { display: flex; }
+  .spinner-ring {
+    width: 44px; height: 44px;
+    border: 3px solid rgba(255,215,0,0.15);
+    border-top-color: #FFD700;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Hata toast ── */
+  #error-toast {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(180,20,20,0.95);
+    border: 1px solid rgba(255,80,80,0.5);
+    color: #fff;
+    font-size: 13px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 10px;
+    white-space: nowrap;
+    z-index: 300;
+    opacity: 0;
+    transition: all 0.3s;
+    pointer-events: none;
+    letter-spacing: 0.5px;
+  }
+  #error-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ── Session expire overlay ── */
+  #session-expired {
+    position: absolute;
+    inset: 0;
+    z-index: 500;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(5,2,20,0.97);
+  }
+  #session-expired.show { display: flex; }
+  .session-icon { font-size: 48px; margin-bottom: 12px; }
+  .session-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 16px;
+    color: #FFD700;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+  .session-text {
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+    text-align: center;
+    line-height: 1.6;
+  }
+
+  /* WIN OVERLAY */
   #win-overlay {
     position: absolute;
     inset: 0;
@@ -367,7 +438,7 @@
     align-items: center;
     justify-content: center;
     background: radial-gradient(ellipse at center, rgba(255,180,0,0.2) 0%, rgba(0,0,0,0.85) 100%);
-    pointer-events: none; /* Asla tıklama bekleme */
+    pointer-events: none;
   }
   #win-overlay.show { display: flex; }
   .win-multiplier {
@@ -407,7 +478,7 @@
     100% { opacity: 1; transform: translateY(0); }
   }
 
-  /* OVERLAY: Game over / new round */
+  /* INFO OVERLAY */
   #info-overlay {
     position: absolute;
     inset: 0;
@@ -438,7 +509,6 @@
     margin-bottom: 16px;
   }
 
-  /* Confetti canvas */
   #confetti-canvas {
     position: absolute;
     inset: 0;
@@ -446,7 +516,6 @@
     z-index: 99;
   }
 
-  /* 18+ badge */
   .age-badge {
     position: absolute;
     top: 12px;
@@ -524,7 +593,7 @@
   <div id="canvas-container">
     <canvas id="main-canvas" width="420" height="480"></canvas>
 
-    <!-- Win overlay (inside canvas container) -->
+    <!-- Win overlay -->
     <div id="win-overlay">
       <div class="win-multiplier" id="win-mult-text">5X</div>
       <div class="win-amount" id="win-amount-text">₺ 0,00</div>
@@ -552,6 +621,21 @@
         3+ aynı renk balonu birleştir<br>ve <strong style="color:#FFD700">çarpanı</strong> kap!
       </div>
     </div>
+
+    <!-- API spinner -->
+    <div id="api-spinner">
+      <div class="spinner-ring"></div>
+    </div>
+
+    <!-- Error toast -->
+    <div id="error-toast"></div>
+
+    <!-- Session expired -->
+    <div id="session-expired">
+      <div class="session-icon">⏰</div>
+      <div class="session-title">OTURUM SONA ERDİ</div>
+      <div class="session-text">Oyunu tekrar başlatmak için<br>lütfen sayfayı yenileyin.</div>
+    </div>
   </div>
 
   <!-- Shooter panel -->
@@ -563,7 +647,6 @@
 
     <canvas id="shooter-canvas" width="420" height="90"></canvas>
 
-    <!-- Pırlanta sayacı — yatay, shooter altında ortada -->
     <div id="passes-display">
       <div class="pass-label">PIRLANTA</div>
       <div id="diamond-slots"></div>
@@ -574,7 +657,7 @@
   <div id="bottom-bar">
     <div class="balance-box">
       <div class="balance-label">BAKİYE</div>
-      <div class="balance-amount" id="balance-display">₺ 1.000</div>
+      <div class="balance-amount loading" id="balance-display">₺ —</div>
     </div>
 
     <div class="bet-box">
@@ -586,16 +669,171 @@
       </div>
     </div>
 
-    <button id="play-btn">OYNA</button>
+    <button id="play-btn" disabled>OYNA</button>
   </div>
 
 </div>
 
 <script>
 // ============================================================
-// BUBBLE FORTUNE — Core Game Engine
+// BUBBLE FORTUNE — Backend Entegreli Frontend
+// ============================================================
+//
+// TÜM PARA HESAPLARI BACKEND'DE YAPILIR.
+// Frontend sadece:
+//   1. Balonu atar, küme tespiti yapar (görsel)
+//   2. POST /game/spin çağırır
+//   3. Sonucu animasyonla gösterir
 // ============================================================
 
+// ── API KONFIGÜRASYONU ────────────────────────────────────────────────────────
+// Token URL'den alınır: ?token=SESSION_TOKEN
+const urlParams    = new URLSearchParams(window.location.search);
+const SESSION_TOKEN = urlParams.get('token') || '';
+
+// Backend URL — prod'da Railway URL'niz buraya gelir
+// Geliştirme için: 'http://localhost:3001'
+const API_BASE = window._API_BASE || 'https://turbo-mega-cark-backend-test.up.railway.app';
+
+// Session token yoksa hemen uyar (geliştirme modunda mock kullan)
+const DEV_MODE = !SESSION_TOKEN;
+if (DEV_MODE) {
+  console.warn('[Bubble Fortune] Session token bulunamadı — DEV MODE aktif (money logic simüle edilir)');
+}
+
+// ── API FONKSİYONLARI ─────────────────────────────────────────────────────────
+
+async function apiFetch(path, options = {}) {
+  if (DEV_MODE) return null; // Dev modda API çağrısı yapma
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'x-session-token': SESSION_TOKEN,
+      ...(options.headers || {}),
+    },
+    signal: AbortSignal.timeout(8000),
+  });
+  if (res.status === 401) {
+    showSessionExpired();
+    throw new Error('SESSION_EXPIRED');
+  }
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+async function loadBalance() {
+  if (DEV_MODE) {
+    state.balance = 1000;
+    updateBalanceDisplay();
+    return;
+  }
+  try {
+    const data = await apiFetch('/game/balance');
+    state.balance = parseFloat(data.balance) || 0;
+    state.currency = data.currency || 'TRY';
+    updateBalanceDisplay();
+    document.getElementById('play-btn').disabled = false;
+  } catch (err) {
+    if (err.message !== 'SESSION_EXPIRED') {
+      showError('Bakiye yüklenemedi');
+      // 3sn sonra tekrar dene
+      setTimeout(loadBalance, 3000);
+    }
+  }
+}
+
+// ── SPIN API ──────────────────────────────────────────────────────────────────
+// Döndürülen değer:
+// {
+//   mult: 3.0,           — çarpan (0 = misfire/kayıp)
+//   winAmount: 150,      — kazanılan miktar (TL)
+//   balance: 1850,       — güncel bakiye
+//   diamond: {
+//     count: 2,          — pırlanta sayacı (0-3)
+//     ready: false       — 3'e ulaştı mı?
+//   },
+//   isGolden: false      — bu spin pırlanta topuydu mu?
+// }
+async function callSpin(bet, clustered, clusterSize, isGolden) {
+  if (DEV_MODE) {
+    // Dev modda client-side simülasyon (backend olmadan test)
+    return devModeSpin(bet, clustered, isGolden);
+  }
+
+  setSpinnerVisible(true);
+  try {
+    const data = await apiFetch('/game/spin', {
+      method: 'POST',
+      body: JSON.stringify({ bet, clustered, clusterSize, isGolden }),
+    });
+    return data;
+  } finally {
+    setSpinnerVisible(false);
+  }
+}
+
+// Dev modda backend'siz simülasyon (gerçek RTP mantığı yok, sadece test amaçlı)
+function devModeSpin(bet, clustered, isGolden) {
+  if (isGolden) {
+    const mults = [4,5,6,7];
+    const mult = mults[Math.floor(Math.random() * mults.length)];
+    const winAmount = Math.round(bet * mult);
+    state.balance = Math.max(0, state.balance - bet + winAmount);
+    return { mult, winAmount, balance: state.balance,
+             diamond: { count: 0, ready: false }, isGolden: true };
+  }
+  state.balance = Math.max(0, state.balance - bet);
+  if (!clustered) {
+    // Pırlanta sayacını %29.6 ihtimalle artır
+    let diamondCount = state.goldenCount;
+    let diamondReady = state.isGoldenReady;
+    if (!diamondReady && Math.random() < 0.296) {
+      diamondCount = Math.min(3, diamondCount + 1);
+      diamondReady = diamondCount >= 3;
+    }
+    return { mult: 0, winAmount: 0, balance: state.balance,
+             diamond: { count: diamondCount, ready: diamondReady }, isGolden: false };
+  }
+  // Cluster var: çarpan seç
+  const table = [
+    { mult: 0,  w: 40 }, { mult: 2,  w: 35 },
+    { mult: 3,  w: 20 }, { mult: 6,  w:  3 }, { mult: 10, w: 2 },
+  ];
+  const total = table.reduce((s,m) => s + m.w, 0);
+  let roll = Math.random() * total;
+  let mult = 0;
+  for (const m of table) { roll -= m.w; if (roll <= 0) { mult = m.mult; break; } }
+  const winAmount = Math.round(bet * mult);
+  state.balance += winAmount;
+  return { mult, winAmount, balance: state.balance,
+           diamond: { count: state.goldenCount, ready: state.isGoldenReady }, isGolden: false };
+}
+
+// ── UI HELPERS ────────────────────────────────────────────────────────────────
+function setSpinnerVisible(v) {
+  document.getElementById('api-spinner').classList.toggle('show', v);
+}
+
+let errorTimer = null;
+function showError(msg) {
+  const el = document.getElementById('error-toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  if (errorTimer) clearTimeout(errorTimer);
+  errorTimer = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+function showSessionExpired() {
+  document.getElementById('session-expired').classList.add('show');
+}
+
+// ============================================================
+// GAME CONSTANTS
+// ============================================================
 const COLORS = [
   { name:'red',    fill:'#FF3A3A', stroke:'#FF8080', shadow:'#FF000088' },
   { name:'blue',   fill:'#1A8CFF', stroke:'#80C4FF', shadow:'#0066FF88' },
@@ -614,1521 +852,844 @@ const CANVAS_H = 480;
 const BET_STEPS = [5, 10, 25, 50, 100, 150, 200, 250];
 
 // ============================================================
-// Ses Sistemi — MP3 dosyaları GitHub'dan yükle
-// ============================================================
-// GitHub raw URL'ini buraya yaz:
-// Örnek: const AUDIO_BASE = 'https://raw.githubusercontent.com/KULLANICI/REPO/main/';
-const AUDIO_BASE = './'; // Aynı klasörde ise bu yeterli
-
-const audio = {
-  bg: null,
-  win: null,
-  gameover: null,
-  enabled: true,
-};
-
-function initAudio() {
-  try {
-    audio.bg = new Audio(AUDIO_BASE + 'bg_music.mp3');
-    audio.bg.loop = true;
-    audio.bg.volume = 0.35;
-
-    audio.win = new Audio(AUDIO_BASE + 'win_sound.mp3');
-    audio.win.volume = 0.7;
-
-    audio.shoot = new Audio(AUDIO_BASE + 'shoot_sound.mp3');
-    audio.shoot.volume = 0.5;
-
-    audio.gameover = new Audio(AUDIO_BASE + 'gameover_sound.mp3');
-    audio.gameover.volume = 0.7;
-  } catch(e) {
-    console.warn('Ses dosyaları yüklenemedi:', e);
-  }
-}
-
-function playBgMusic() {
-  if (!audio.enabled || !audio.bg) return;
-  audio.bg.currentTime = 0;
-  audio.bg.play().catch(() => {});
-}
-
-function stopBgMusic() {
-  if (!audio.bg) return;
-  audio.bg.pause();
-  audio.bg.currentTime = 0;
-}
-
-function playWin() {
-  if (!audio.enabled || !audio.win) return;
-  audio.win.currentTime = 0;
-  audio.win.play().catch(() => {});
-}
-
-function playShoot() {
-  if (!audio.enabled || !audio.shoot) return;
-  audio.shoot.currentTime = 0;
-  audio.shoot.play().catch(() => {});
-}
-
-function playGameOver() {
-  if (!audio.enabled || !audio.gameover) return;
-  stopBgMusic();
-  audio.gameover.currentTime = 0;
-  audio.gameover.play().catch(() => {});
-}
-
-initAudio();
-
-// ============================================================
-// RTP TABLOSU — YÜKSEK VARYANS, ATIŞ BAZLI MODEL
-// ============================================================
-// Her atışta 1 bahis düşer.
-// Küme oluşursa çarpan × bahis kazanılır.
-//
-// Formül: RTP = P_cluster × E[mult|küme] + Pırlanta katkısı
-//
-// P_cluster aralığı: %38 - %46
-// E[mult|küme] = 1.68
-//
-//   P=0.38 → RTP ≈ %70 ✅
-//   P=0.42 → RTP ≈ %77 ✅  ← beklenen ortalama
-//   P=0.46 → RTP ≈ %85
-//
-// Pırlanta E[mult]=5.0 → katkı ≈ %6/atış
-// Toplam beklenen RTP: ~%74-80
-//
-// Monte Carlo (1M atış, P=0.42): %77.5 ✅
-//
-// YÜKSEK VARYANS HİSSİ:
-//   %40 küme → 0x   (kayıp)
-//   %35 küme → 2x   (geri dönüş)
-//   %20 küme → 3x   (güzel kazanç)
-//   %3  küme → 6x  ⚡ (büyük WOW!)
-//   %2  küme → 10x 🔥 (mega jackpot!)
-// ============================================================
-const MULT_TABLE = [
-  { mult: 0.0,  weight: 40 }, // Kayıp        — %40
-  { mult: 2.0,  weight: 35 }, // Geri dönüş   — %35
-  { mult: 3.0,  weight: 20 }, // Güzel kazanç — %20
-  { mult: 6.0,  weight:  3 }, // Büyük ⚡     — %3
-  { mult: 10.0, weight:  2 }, // Mega 🔥      — %2
-];
-// E = 0×.40 + 2×.35 + 3×.20 + 6×.03 + 10×.02 = 0+0.70+0.60+0.18+0.20 = 1.68 ✓
-
-// Pırlanta çarpanları — E[mult]=5.0
-// 4x:%40, 5x:%30, 6x:%20, 7x:%10
-const DIAMOND_MULTS   = [4, 5, 6, 7];
-const DIAMOND_WEIGHTS = [40, 30, 20, 10];
-const P_DIAMOND_TRIGGER = 0.296;
-
-// ============================================================
-// State
+// STATE
+// NOTE: balance ve diamond state backend'den gelir,
+//       bu değişkenler sadece UI için cache görevi görür.
 // ============================================================
 let state = {
-  grid: [],           // [row][col] = colorIndex or -1
-  projectile: null,   // {colorIndex, x, y, vx, vy, active}
-  currentColor: 0,    // renk şu an shooter'da bekleyen top
-  nextColor: 0,       // preview'de gösterilen sıradaki top
-  passes: 0,          // kullanılmıyor — hak sistemi kaldırıldı
-  balance: 1000,
-  betIndex: 0,        // index into BET_STEPS — ₺5'ten başla
-  phase: 'idle',      // 'idle' | 'playing' | 'shooting' | 'win' | 'gameover'
+  grid: [],
+  projectile: null,
+  currentColor: 0,
+  nextColor: 0,
+  balance: 0,           // Backend'den yüklenir
+  currency: 'TRY',
+  betIndex: 3,          // Varsayılan ₺50
+  phase: 'idle',        // 'idle' | 'playing' | 'shooting' | 'waitingApi' | 'win' | 'gameover'
   aimAngle: -Math.PI/2,
   particles: [],
   confetti: [],
-  lastWinMult: 0,
-  lastWinAmt: 0,
-  rowsAdded: 0,
-  // --- Altın top sistemi ---
-  goldenCount: 0,     // 0-3 arası sayaç
-  isGoldenReady: false, // 3'e ulaşınca true — shooter altın topa döner
-  goldenFlashSlot: -1,  // hangi slot yeni doldu (flash animasyonu için)
-  goldenFlashTime: 0,   // flash başlangıç zamanı
+  // Pırlanta sayacı — backend'den sync edilir
+  goldenCount: 0,
+  isGoldenReady: false,
+  goldenFlashSlot: -1,
+  goldenFlashTime: 0,
 };
 
 // ============================================================
 // Canvas refs
 // ============================================================
-const mainCanvas = document.getElementById('main-canvas');
+const mainCanvas    = document.getElementById('main-canvas');
 const mc = mainCanvas.getContext('2d');
 const shooterCanvas = document.getElementById('shooter-canvas');
 const sc = shooterCanvas.getContext('2d');
 const previewCanvas = document.getElementById('preview-canvas');
 const pc = previewCanvas.getContext('2d');
-const confCanvas = document.getElementById('confetti-canvas');
+const confCanvas    = document.getElementById('confetti-canvas');
 const cc = confCanvas.getContext('2d');
+
+// ============================================================
+// Ses Sistemi
+// ============================================================
+const AUDIO_BASE = './';
+const audio = { bg:null, win:null, shoot:null, gameover:null, enabled:true };
+
+function initAudio() {
+  try {
+    audio.bg = new Audio(AUDIO_BASE + 'bg_music.mp3'); audio.bg.loop=true; audio.bg.volume=0.35;
+    audio.win = new Audio(AUDIO_BASE + 'win_sound.mp3'); audio.win.volume=0.7;
+    audio.shoot = new Audio(AUDIO_BASE + 'shoot_sound.mp3'); audio.shoot.volume=0.5;
+    audio.gameover = new Audio(AUDIO_BASE + 'gameover_sound.mp3'); audio.gameover.volume=0.7;
+  } catch(e) { console.warn('Ses yüklenemedi'); }
+}
+function playBgMusic() { if(!audio.enabled||!audio.bg)return; audio.bg.currentTime=0; audio.bg.play().catch(()=>{}); }
+function stopBgMusic()  { if(!audio.bg)return; audio.bg.pause(); audio.bg.currentTime=0; }
+function playWin()      { if(!audio.enabled||!audio.win)return; audio.win.currentTime=0; audio.win.play().catch(()=>{}); }
+function playShoot()    { if(!audio.enabled||!audio.shoot)return; audio.shoot.currentTime=0; audio.shoot.play().catch(()=>{}); }
+function playGameOver() { if(!audio.enabled||!audio.gameover)return; stopBgMusic(); audio.gameover.currentTime=0; audio.gameover.play().catch(()=>{}); }
+initAudio();
 
 // ============================================================
 // Helpers
 // ============================================================
-function rng(min, max) { return Math.random()*(max-min)+min; }
-function rngInt(min, max) { return Math.floor(rng(min, max+1)); }
-function fmtTL(n) {
-  return '₺ ' + n.toLocaleString('tr-TR', {minimumFractionDigits:0, maximumFractionDigits:0});
+function rng(min,max){return Math.random()*(max-min)+min;}
+function rngInt(min,max){return Math.floor(rng(min,max+1));}
+function fmtTL(n){
+  return '₺ '+n.toLocaleString('tr-TR',{minimumFractionDigits:0,maximumFractionDigits:0});
 }
 
-// Grid coordinates
-function bubbleX(col, row) {
-  const offset = (row % 2 === 0) ? 0 : BUBBLE_R;
-  return 20 + col * (BUBBLE_R*2 + 2) + BUBBLE_R + offset;
+function bubbleX(col,row){
+  const offset=(row%2===0)?0:BUBBLE_R;
+  return 20+col*(BUBBLE_R*2+2)+BUBBLE_R+offset;
 }
-function bubbleY(row) {
-  return 20 + row * (BUBBLE_R*1.75);
-}
+function bubbleY(row){ return 20+row*(BUBBLE_R*1.75); }
 
 // ============================================================
 // Draw single bubble
 // ============================================================
-function drawBubble(ctx, x, y, r, colorIdx, alpha=1) {
-  if (colorIdx < 0) return;
-  const c = COLORS[colorIdx];
-  ctx.save();
-  ctx.globalAlpha = alpha;
-
-  // Shadow / glow
-  ctx.shadowColor = c.shadow;
-  ctx.shadowBlur = 12;
-
-  // Main fill
-  const grad = ctx.createRadialGradient(x - r*0.3, y - r*0.3, r*0.1, x, y, r);
-  grad.addColorStop(0, c.stroke);
-  grad.addColorStop(0.5, c.fill);
-  grad.addColorStop(1, darken(c.fill, 0.5));
-  ctx.beginPath();
-  ctx.arc(x, y, r, 0, Math.PI*2);
-  ctx.fillStyle = grad;
-  ctx.fill();
-
-  // Highlight
-  ctx.shadowBlur = 0;
-  const hg = ctx.createRadialGradient(x - r*0.3, y - r*0.35, 0, x - r*0.3, y - r*0.35, r*0.55);
-  hg.addColorStop(0, 'rgba(255,255,255,0.55)');
-  hg.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.beginPath();
-  ctx.arc(x, y, r, 0, Math.PI*2);
-  ctx.fillStyle = hg;
-  ctx.fill();
-
+function drawBubble(ctx,x,y,r,colorIdx,alpha=1){
+  if(colorIdx<0)return;
+  const c=COLORS[colorIdx];
+  ctx.save(); ctx.globalAlpha=alpha;
+  ctx.shadowColor=c.shadow; ctx.shadowBlur=12;
+  const grad=ctx.createRadialGradient(x-r*0.3,y-r*0.3,r*0.1,x,y,r);
+  grad.addColorStop(0,c.stroke);
+  grad.addColorStop(0.5,c.fill);
+  grad.addColorStop(1,darken(c.fill,0.5));
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.fillStyle=grad; ctx.fill();
+  ctx.shadowBlur=0;
+  const hg=ctx.createRadialGradient(x-r*0.3,y-r*0.35,0,x-r*0.3,y-r*0.35,r*0.55);
+  hg.addColorStop(0,'rgba(255,255,255,0.55)');
+  hg.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.fillStyle=hg; ctx.fill();
   ctx.restore();
 }
 
-function darken(hex, factor) {
-  let r = parseInt(hex.slice(1,3),16);
-  let g = parseInt(hex.slice(3,5),16);
-  let b = parseInt(hex.slice(5,7),16);
+function darken(hex,factor){
+  let r=parseInt(hex.slice(1,3),16);
+  let g=parseInt(hex.slice(3,5),16);
+  let b=parseInt(hex.slice(5,7),16);
   return `rgb(${Math.floor(r*factor)},${Math.floor(g*factor)},${Math.floor(b*factor)})`;
 }
 
 // ============================================================
-// Pırlanta çizimi — kesim yüzeyli elmas görünümü
+// Pırlanta çizimi
 // ============================================================
-function drawGoldenBubble(ctx, x, y, r, alpha=1) {
-  ctx.save();
-  ctx.globalAlpha = alpha;
-
-  // Dış mavi-beyaz ışıma (pırlantaya özgü soğuk parıltı)
-  ctx.shadowColor = '#A8EEFF';
-  ctx.shadowBlur = 28;
-
-  // Clip: daire içinde tut
-  ctx.beginPath();
-  ctx.arc(x, y, r, 0, Math.PI * 2);
-  ctx.clip();
-
-  // --- Pırlanta kesim yüzeyleri (top view / brilliant cut) ---
-  // Arka plan — koyu mavi-mor derin renk
-  const bgGrad = ctx.createRadialGradient(x, y, 0, x, y, r);
-  bgGrad.addColorStop(0,   '#C8F0FF');
-  bgGrad.addColorStop(0.35,'#60C8FF');
-  bgGrad.addColorStop(0.7, '#1060A0');
-  bgGrad.addColorStop(1,   '#082040');
-  ctx.beginPath();
-  ctx.arc(x, y, r, 0, Math.PI*2);
-  ctx.fillStyle = bgGrad;
-  ctx.fill();
-
-  // Kesim facet'leri — pırlanta dilimler (8 yön)
-  const facetColors = [
-    'rgba(255,255,255,0.55)',
-    'rgba(180,240,255,0.45)',
-    'rgba(100,200,255,0.30)',
-    'rgba(255,255,255,0.50)',
-    'rgba(140,210,255,0.35)',
-    'rgba(255,255,255,0.45)',
-    'rgba(80,180,255,0.30)',
-    'rgba(255,255,255,0.40)',
-  ];
-  const facetCount = 8;
-  for (let i = 0; i < facetCount; i++) {
-    const a1 = (i / facetCount) * Math.PI * 2 - Math.PI / facetCount;
-    const a2 = a1 + (Math.PI * 2 / facetCount);
-    const aMid = (a1 + a2) / 2;
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.arc(x, y, r * 0.92, a1, a2);
-    ctx.closePath();
-    ctx.fillStyle = facetColors[i % facetColors.length];
-    ctx.fill();
-    // İnce facet çizgisi
-    ctx.strokeStyle = 'rgba(255,255,255,0.18)';
-    ctx.lineWidth = 0.5;
-    ctx.stroke();
+function drawGoldenBubble(ctx,x,y,r,alpha=1){
+  ctx.save(); ctx.globalAlpha=alpha;
+  ctx.shadowColor='#A8EEFF'; ctx.shadowBlur=28;
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.clip();
+  const bgGrad=ctx.createRadialGradient(x,y,0,x,y,r);
+  bgGrad.addColorStop(0,'#C8F0FF'); bgGrad.addColorStop(0.35,'#60C8FF');
+  bgGrad.addColorStop(0.7,'#1060A0'); bgGrad.addColorStop(1,'#082040');
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fillStyle=bgGrad; ctx.fill();
+  const fc=['rgba(255,255,255,0.55)','rgba(180,240,255,0.45)','rgba(100,200,255,0.30)',
+            'rgba(255,255,255,0.50)','rgba(140,210,255,0.35)','rgba(255,255,255,0.45)',
+            'rgba(80,180,255,0.30)','rgba(255,255,255,0.40)'];
+  for(let i=0;i<8;i++){
+    const a1=(i/8)*Math.PI*2-Math.PI/8; const a2=a1+(Math.PI*2/8);
+    ctx.beginPath(); ctx.moveTo(x,y); ctx.arc(x,y,r*0.92,a1,a2); ctx.closePath();
+    ctx.fillStyle=fc[i]; ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.18)'; ctx.lineWidth=0.5; ctx.stroke();
   }
-
-  // Merkez octagon (table facet)
-  const tableR = r * 0.42;
-  ctx.beginPath();
-  for (let i = 0; i < 8; i++) {
-    const a = (i / 8) * Math.PI * 2 - Math.PI / 8;
-    const px = x + Math.cos(a) * tableR;
-    const py = y + Math.sin(a) * tableR;
-    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  const tR=r*0.42; ctx.beginPath();
+  for(let i=0;i<8;i++){
+    const a=(i/8)*Math.PI*2-Math.PI/8;
+    const px=x+Math.cos(a)*tR; const py=y+Math.sin(a)*tR;
+    i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
   }
   ctx.closePath();
-  const tableGrad = ctx.createRadialGradient(x - r*0.1, y - r*0.1, 0, x, y, tableR);
-  tableGrad.addColorStop(0, 'rgba(255,255,255,0.95)');
-  tableGrad.addColorStop(0.4,'rgba(200,245,255,0.75)');
-  tableGrad.addColorStop(1, 'rgba(100,200,255,0.35)');
-  ctx.fillStyle = tableGrad;
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-  ctx.lineWidth = 0.8;
-  ctx.stroke();
-
-  // Girdle (çevre şeridi)
-  ctx.beginPath();
-  ctx.arc(x, y, r * 0.92, 0, Math.PI * 2);
-  ctx.strokeStyle = 'rgba(180,240,255,0.4)';
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
-
-  ctx.restore();
-  ctx.save();
-  ctx.globalAlpha = alpha;
-
-  // Işık yansıması — sol üst parlama
-  const sparkGrad = ctx.createRadialGradient(x - r*0.32, y - r*0.38, 0, x - r*0.32, y - r*0.38, r*0.42);
-  sparkGrad.addColorStop(0, 'rgba(255,255,255,0.9)');
-  sparkGrad.addColorStop(0.5,'rgba(255,255,255,0.3)');
-  sparkGrad.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.beginPath();
-  ctx.arc(x, y, r, 0, Math.PI*2);
-  ctx.fillStyle = sparkGrad;
-  ctx.fill();
-
-  // Dış çerçeve parıltısı
-  ctx.shadowColor = '#A8EEFF';
-  ctx.shadowBlur = 14;
-  ctx.beginPath();
-  ctx.arc(x, y, r, 0, Math.PI*2);
-  ctx.strokeStyle = 'rgba(200,245,255,0.7)';
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
-
-  // 4 köşeli yıldız çakıltısı (sparkle)
-  const t = Date.now() / 800;
-  const sparkles = [
-    { ox: -r*0.25, oy: -r*0.35, size: r*0.22 },
-    { ox:  r*0.3,  oy:  r*0.2,  size: r*0.14 },
-    { ox: -r*0.1,  oy:  r*0.3,  size: r*0.10 },
-  ];
-  for (const sp of sparkles) {
-    const pulse = 0.5 + 0.5 * Math.sin(t + sp.size * 10);
-    const sx = x + sp.ox, sy = y + sp.oy, sz = sp.size * pulse;
-    ctx.save();
-    ctx.globalAlpha = alpha * 0.85 * pulse;
-    ctx.shadowColor = '#ffffff';
-    ctx.shadowBlur = 8;
-    ctx.fillStyle = '#ffffff';
+  const tg=ctx.createRadialGradient(x-r*0.1,y-r*0.1,0,x,y,tR);
+  tg.addColorStop(0,'rgba(255,255,255,0.95)'); tg.addColorStop(0.4,'rgba(200,245,255,0.75)');
+  tg.addColorStop(1,'rgba(100,200,255,0.35)');
+  ctx.fillStyle=tg; ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=0.8; ctx.stroke();
+  ctx.beginPath(); ctx.arc(x,y,r*0.92,0,Math.PI*2);
+  ctx.strokeStyle='rgba(180,240,255,0.4)'; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.restore(); ctx.save(); ctx.globalAlpha=alpha;
+  const sg=ctx.createRadialGradient(x-r*0.32,y-r*0.38,0,x-r*0.32,y-r*0.38,r*0.42);
+  sg.addColorStop(0,'rgba(255,255,255,0.9)'); sg.addColorStop(0.5,'rgba(255,255,255,0.3)');
+  sg.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fillStyle=sg; ctx.fill();
+  ctx.shadowColor='#A8EEFF'; ctx.shadowBlur=14;
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.strokeStyle='rgba(200,245,255,0.7)'; ctx.lineWidth=1.5; ctx.stroke();
+  const t=Date.now()/800;
+  const sparkles=[{ox:-r*0.25,oy:-r*0.35,size:r*0.22},{ox:r*0.3,oy:r*0.2,size:r*0.14},{ox:-r*0.1,oy:r*0.3,size:r*0.10}];
+  for(const sp of sparkles){
+    const pulse=0.5+0.5*Math.sin(t+sp.size*10);
+    const sx=x+sp.ox,sy=y+sp.oy,sz=sp.size*pulse;
+    ctx.save(); ctx.globalAlpha=alpha*0.85*pulse;
+    ctx.shadowColor='#ffffff'; ctx.shadowBlur=8; ctx.fillStyle='#ffffff';
     ctx.beginPath();
-    ctx.moveTo(sx, sy - sz);
-    ctx.lineTo(sx + sz*0.18, sy - sz*0.18);
-    ctx.lineTo(sx + sz, sy);
-    ctx.lineTo(sx + sz*0.18, sy + sz*0.18);
-    ctx.lineTo(sx, sy + sz);
-    ctx.lineTo(sx - sz*0.18, sy + sz*0.18);
-    ctx.lineTo(sx - sz, sy);
-    ctx.lineTo(sx - sz*0.18, sy - sz*0.18);
-    ctx.closePath();
-    ctx.fill();
+    ctx.moveTo(sx,sy-sz); ctx.lineTo(sx+sz*0.18,sy-sz*0.18); ctx.lineTo(sx+sz,sy);
+    ctx.lineTo(sx+sz*0.18,sy+sz*0.18); ctx.lineTo(sx,sy+sz);
+    ctx.lineTo(sx-sz*0.18,sy+sz*0.18); ctx.lineTo(sx-sz,sy);
+    ctx.lineTo(sx-sz*0.18,sy-sz*0.18); ctx.closePath(); ctx.fill();
     ctx.restore();
   }
-
   ctx.restore();
 }
 
 // ============================================================
-// Pırlanta sayaç UI çizimi (shooter panel üzerinde)
+// Grid init
 // ============================================================
-function drawGoldenCounter(ctx) {
-  const count = state.goldenCount;
-  const cx = 210, cy = 70;
-
-  // Flash animasyon hesabı
-  const FLASH_DURATION = 600; // ms
-  const flashAge = Date.now() - state.goldenFlashTime;
-  const flashProgress = Math.max(0, 1 - flashAge / FLASH_DURATION); // 1→0
-
-  for (let i = 0; i < 3; i++) {
-    const bx = cx - 22 + i * 22;
-    const by = cy - BUBBLE_R - 18;
-    const filled = i < count;
-    const isFlashing = (i === state.goldenFlashSlot && flashProgress > 0);
-    ctx.save();
-
-    if (filled) {
-      // Flash beyaz halo — yeni doldu efekti
-      if (isFlashing) {
-        ctx.shadowColor = '#ffffff';
-        ctx.shadowBlur = 22 * flashProgress;
-        // Büyüyen halka
-        ctx.globalAlpha = flashProgress * 0.85;
-        ctx.beginPath();
-        ctx.arc(bx, by + 2, (6.5 + 10 * (1 - flashProgress)), 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(255,255,255,' + flashProgress + ')';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        ctx.globalAlpha = 1;
-      } else {
-        ctx.shadowColor = '#A8EEFF';
-        ctx.shadowBlur = 10;
-      }
-
-      // Pırlanta şekli
-      const s = isFlashing ? 6.5 + 1.5 * flashProgress : 6.5; // hafif büyür
-      ctx.beginPath();
-      ctx.moveTo(bx - s*0.55, by - s*0.25);
-      ctx.lineTo(bx + s*0.55, by - s*0.25);
-      ctx.lineTo(bx + s*0.85, by + s*0.1);
-      ctx.lineTo(bx, by + s);
-      ctx.lineTo(bx - s*0.85, by + s*0.1);
-      ctx.closePath();
-      const dg = ctx.createLinearGradient(bx, by - s, bx, by + s);
-      if (isFlashing) {
-        // Flash rengi — beyazdan maviye geçiş
-        dg.addColorStop(0,   `rgba(255,255,255,${0.5 + 0.5*flashProgress})`);
-        dg.addColorStop(0.3, '#A8EEFF');
-        dg.addColorStop(0.7, '#2090D0');
-        dg.addColorStop(1,   '#0A4080');
-      } else {
-        dg.addColorStop(0,   '#E8F8FF');
-        dg.addColorStop(0.3, '#7DD8FF');
-        dg.addColorStop(0.7, '#2090D0');
-        dg.addColorStop(1,   '#0A4080');
-      }
-      ctx.fillStyle = dg;
-      ctx.fill();
-      ctx.strokeStyle = isFlashing
-        ? `rgba(255,255,255,${0.5 + 0.5*flashProgress})`
-        : 'rgba(200,245,255,0.8)';
-      ctx.lineWidth = isFlashing ? 1.5 : 0.8;
-      ctx.stroke();
-      // İç facet çizgisi
-      ctx.beginPath();
-      ctx.moveTo(bx - s*0.55, by - s*0.25);
-      ctx.lineTo(bx, by + s*0.2);
-      ctx.lineTo(bx + s*0.55, by - s*0.25);
-      ctx.strokeStyle = isFlashing
-        ? `rgba(255,255,255,${0.6 * flashProgress})`
-        : 'rgba(255,255,255,0.35)';
-      ctx.lineWidth = 0.5;
-      ctx.stroke();
-
-      // Flash: 4 köşeli sparkle patlaması
-      if (isFlashing && flashProgress > 0.3) {
-        const sp = (flashProgress - 0.3) / 0.7;
-        ctx.globalAlpha = sp;
-        ctx.fillStyle = '#ffffff';
-        ctx.shadowColor = '#A8EEFF';
-        ctx.shadowBlur = 8;
-        const sz = s * 0.5 * sp;
-        ctx.beginPath();
-        ctx.moveTo(bx, by - sz*1.8);
-        ctx.lineTo(bx + sz*0.25, by - sz*0.25);
-        ctx.lineTo(bx + sz*1.8, by);
-        ctx.lineTo(bx + sz*0.25, by + sz*0.25);
-        ctx.lineTo(bx, by + sz*1.8);
-        ctx.lineTo(bx - sz*0.25, by + sz*0.25);
-        ctx.lineTo(bx - sz*1.8, by);
-        ctx.lineTo(bx - sz*0.25, by - sz*0.25);
-        ctx.closePath();
-        ctx.fill();
-        ctx.globalAlpha = 1;
-      }
-
-    } else {
-      // Boş slot
-      ctx.shadowBlur = 0;
-      const s = 6.5;
-      ctx.beginPath();
-      ctx.moveTo(bx - s*0.55, by - s*0.25);
-      ctx.lineTo(bx + s*0.55, by - s*0.25);
-      ctx.lineTo(bx + s*0.85, by + s*0.1);
-      ctx.lineTo(bx, by + s);
-      ctx.lineTo(bx - s*0.85, by + s*0.1);
-      ctx.closePath();
-      ctx.fillStyle = 'rgba(100,200,255,0.07)';
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(100,200,255,0.25)';
-      ctx.lineWidth = 0.8;
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  // Etiket
-  ctx.save();
-  ctx.font = '8px Rajdhani, sans-serif';
-  ctx.fillStyle = state.isGoldenReady ? 'rgba(160,235,255,0.9)' : 'rgba(100,200,255,0.5)';
-  ctx.textAlign = 'center';
-  ctx.fillText('PIRLANTA', cx, cy - BUBBLE_R - 30);
-  ctx.restore();
-}
-
-// ============================================================
-// Init grid
-// ============================================================
-function initGrid() {
-  state.grid = [];
-  const numColors = 5 + Math.floor(Math.random()*3); // 5-7 colors
-  const usedColors = shuffle([...Array(COLORS.length).keys()]).slice(0, numColors);
-
-  for (let r = 0; r < ROWS; r++) {
-    state.grid[r] = [];
-    for (let c = 0; c < COLS; c++) {
-      // Last 2 rows sparse
-      if (r >= ROWS-2 && Math.random() < 0.35) {
-        state.grid[r][c] = -1;
-      } else {
-        state.grid[r][c] = usedColors[rngInt(0, usedColors.length-1)];
-      }
+function initGrid(){
+  state.grid=[];
+  const numColors=5+Math.floor(Math.random()*3);
+  const usedColors=shuffle([...Array(COLORS.length).keys()]).slice(0,numColors);
+  for(let r=0;r<ROWS;r++){
+    state.grid[r]=[];
+    for(let c=0;c<COLS;c++){
+      if(r>=ROWS-2&&Math.random()<0.35){state.grid[r][c]=-1;}
+      else{state.grid[r][c]=usedColors[rngInt(0,usedColors.length-1)];}
     }
   }
 }
 
-function shuffle(arr) {
-  for (let i = arr.length-1; i > 0; i--) {
-    const j = rngInt(0, i);
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){const j=rngInt(0,i);[arr[i],arr[j]]=[arr[j],arr[i]];}
   return arr;
 }
 
-// ============================================================
-// Pick next projectile color (weighted toward existing colors)
-// ============================================================
-function pickNextColor() {
-  const existing = [];
-  for (let r = 0; r < state.grid.length; r++)
-    for (let c = 0; c < COLS; c++)
-      if (state.grid[r] && state.grid[r][c] >= 0) existing.push(state.grid[r][c]);
-  if (existing.length === 0) return rngInt(0, COLORS.length-1);
-  return existing[rngInt(0, existing.length-1)];
+function pickNextColor(){
+  const existing=[];
+  for(let r=0;r<state.grid.length;r++)
+    for(let c=0;c<COLS;c++)
+      if(state.grid[r]&&state.grid[r][c]>=0)existing.push(state.grid[r][c]);
+  if(existing.length===0)return rngInt(0,COLORS.length-1);
+  return existing[rngInt(0,existing.length-1)];
 }
 
 // ============================================================
-// Multiplier picker (RNG weighted)
+// Grid helpers
 // ============================================================
-function pickMultiplier() {
-  const total = MULT_TABLE.reduce((s,m) => s + m.weight, 0);
-  let roll = Math.random() * total;
-  for (const m of MULT_TABLE) {
-    roll -= m.weight;
-    if (roll <= 0) return m.mult;
-  }
-  return MULT_TABLE[MULT_TABLE.length-1].mult;
-}
-
-function pickDiamondMultiplier() {
-  const total = DIAMOND_WEIGHTS.reduce((a,b)=>a+b, 0);
-  let roll = Math.random() * total;
-  for (let i=0; i<DIAMOND_MULTS.length; i++) {
-    roll -= DIAMOND_WEIGHTS[i];
-    if (roll <= 0) return DIAMOND_MULTS[i];
-  }
-  return DIAMOND_MULTS[DIAMOND_MULTS.length-1];
-}
-
-// ============================================================
-// Grid snap: find nearest empty cell for projectile
-// ============================================================
-function snapToGrid(px, py) {
-  let bestRow = -1, bestCol = -1, bestDist = Infinity;
-  for (let r = 0; r < state.grid.length + 2; r++) {
-    for (let c = 0; c < COLS; c++) {
-      const gx = bubbleX(c, r);
-      const gy = bubbleY(r);
-      const dist = Math.hypot(px - gx, py - gy);
-      const hasCell = state.grid[r] !== undefined;
-      const isEmpty = !hasCell || state.grid[r][c] === undefined || state.grid[r][c] < 0;
-      if (dist < BUBBLE_R*2.2 && dist < bestDist && isEmpty) {
-        bestDist = dist;
-        bestRow = r;
-        bestCol = c;
-      }
+function snapToGrid(px,py){
+  let bestRow=-1,bestCol=-1,bestDist=Infinity;
+  for(let r=0;r<state.grid.length+2;r++){
+    for(let c=0;c<COLS;c++){
+      const gx=bubbleX(c,r); const gy=bubbleY(r);
+      const dist=Math.hypot(px-gx,py-gy);
+      const hasCell=state.grid[r]!==undefined;
+      const isEmpty=!hasCell||state.grid[r][c]===undefined||state.grid[r][c]<0;
+      if(dist<BUBBLE_R*2.2&&dist<bestDist&&isEmpty){bestDist=dist;bestRow=r;bestCol=c;}
     }
   }
-  return { row: bestRow, col: bestCol };
+  return{row:bestRow,col:bestCol};
 }
 
-// ============================================================
-// BFS: find connected same-color cluster
-// ============================================================
-function findCluster(row, col) {
-  const color = state.grid[row]?.[col];
-  if (color === undefined || color < 0) return [];
-  const visited = new Set();
-  const queue = [[row, col]];
-  visited.add(`${row},${col}`);
-  const cluster = [];
-
-  while (queue.length > 0) {
-    const [r, c] = queue.shift();
-    cluster.push([r, c]);
-    for (const [nr, nc] of getNeighbors(r, c)) {
-      const key = `${nr},${nc}`;
-      if (!visited.has(key) && state.grid[nr]?.[nc] === color) {
-        visited.add(key);
-        queue.push([nr, nc]);
-      }
+function findCluster(row,col){
+  const color=state.grid[row]?.[col];
+  if(color===undefined||color<0)return[];
+  const visited=new Set(); const queue=[[row,col]];
+  visited.add(`${row},${col}`); const cluster=[];
+  while(queue.length>0){
+    const[r,c]=queue.shift(); cluster.push([r,c]);
+    for(const[nr,nc]of getNeighbors(r,c)){
+      const key=`${nr},${nc}`;
+      if(!visited.has(key)&&state.grid[nr]?.[nc]===color){visited.add(key);queue.push([nr,nc]);}
     }
   }
   return cluster;
 }
 
-function getNeighbors(row, col) {
-  const neighbors = [];
-  const evenRow = row % 2 === 0;
-  const dirs = evenRow
-    ? [[-1,-1],[-1,0],[0,-1],[0,1],[1,-1],[1,0]]
-    : [[-1,0],[-1,1],[0,-1],[0,1],[1,0],[1,1]];
-  for (const [dr, dc] of dirs) {
-    const nr = row + dr, nc = col + dc;
-    if (nr >= 0 && nr < 20 && nc >= 0 && nc < COLS) neighbors.push([nr, nc]);
+function getNeighbors(row,col){
+  const neighbors=[];
+  const evenRow=row%2===0;
+  const dirs=evenRow?[[-1,-1],[-1,0],[0,-1],[0,1],[1,-1],[1,0]]:[[-1,0],[-1,1],[0,-1],[0,1],[1,0],[1,1]];
+  for(const[dr,dc]of dirs){
+    const nr=row+dr,nc=col+dc;
+    if(nr>=0&&nr<20&&nc>=0&&nc<COLS)neighbors.push([nr,nc]);
   }
   return neighbors;
 }
 
-// ============================================================
-// Find bubbles that are floating (not connected to top)
-// ============================================================
-function findFloating() {
-  const connected = new Set();
-  const queue = [];
-  for (let c = 0; c < COLS; c++) {
-    if (state.grid[0]?.[c] >= 0) {
-      queue.push([0, c]);
-      connected.add(`0,${c}`);
+function findFloating(){
+  const connected=new Set(); const queue=[];
+  for(let c=0;c<COLS;c++){
+    if(state.grid[0]?.[c]>=0){queue.push([0,c]);connected.add(`0,${c}`);}
+  }
+  while(queue.length>0){
+    const[r,c]=queue.shift();
+    for(const[nr,nc]of getNeighbors(r,c)){
+      const key=`${nr},${nc}`;
+      if(!connected.has(key)&&state.grid[nr]?.[nc]>=0){connected.add(key);queue.push([nr,nc]);}
     }
   }
-  while (queue.length > 0) {
-    const [r, c] = queue.shift();
-    for (const [nr, nc] of getNeighbors(r, c)) {
-      const key = `${nr},${nc}`;
-      if (!connected.has(key) && state.grid[nr]?.[nc] >= 0) {
-        connected.add(key);
-        queue.push([nr, nc]);
-      }
-    }
-  }
-  const floating = [];
-  for (let r = 0; r < state.grid.length; r++)
-    for (let c = 0; c < COLS; c++)
-      if (state.grid[r]?.[c] >= 0 && !connected.has(`${r},${c}`))
-        floating.push([r, c]);
+  const floating=[];
+  for(let r=0;r<state.grid.length;r++)
+    for(let c=0;c<COLS;c++)
+      if(state.grid[r]?.[c]>=0&&!connected.has(`${r},${c}`))floating.push([r,c]);
   return floating;
 }
 
-// ============================================================
-// Pop cluster + avalanche
-// ============================================================
-function popCluster(row, col) {
-  const cluster = findCluster(row, col);
-  if (cluster.length < 3) return 0;
-
-  // Pop cluster
-  for (const [r, c] of cluster) {
-    spawnPopParticles(bubbleX(c, r), bubbleY(r), state.grid[r][c]);
-    state.grid[r][c] = -1;
-  }
-
-  // Avalanche
-  const floating = findFloating();
-  for (const [r, c] of floating) {
-    spawnPopParticles(bubbleX(c, r), bubbleY(r), state.grid[r][c]);
-    state.grid[r][c] = -1;
-  }
-
-  return cluster.length + floating.length;
+function popCluster(row,col){
+  const cluster=findCluster(row,col);
+  if(cluster.length<3)return{count:0,cluster:[]};
+  for(const[r,c]of cluster){spawnPopParticles(bubbleX(c,r),bubbleY(r),state.grid[r][c]);state.grid[r][c]=-1;}
+  const floating=findFloating();
+  for(const[r,c]of floating){spawnPopParticles(bubbleX(c,r),bubbleY(r),state.grid[r][c]);state.grid[r][c]=-1;}
+  return{count:cluster.length+floating.length,cluster};
 }
 
 // ============================================================
-// Particles
+// Particles & Confetti
 // ============================================================
-function spawnPopParticles(x, y, colorIdx) {
-  const c = COLORS[colorIdx];
-  for (let i = 0; i < 10; i++) {
-    const angle = rng(0, Math.PI*2);
-    const speed = rng(1, 5);
-    state.particles.push({
-      x, y,
-      vx: Math.cos(angle)*speed,
-      vy: Math.sin(angle)*speed - 1,
-      r: rng(3, 7),
-      color: c.fill,
-      alpha: 1,
-      life: rng(0.6, 1.0),
-    });
+function spawnPopParticles(x,y,colorIdx){
+  const c=COLORS[colorIdx];
+  for(let i=0;i<10;i++){
+    const angle=rng(0,Math.PI*2); const speed=rng(1,5);
+    state.particles.push({x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed-1,r:rng(3,7),color:c.fill,alpha:1});
+  }
+}
+function updateParticles(){
+  state.particles=state.particles.filter(p=>p.alpha>0.01);
+  for(const p of state.particles){p.x+=p.vx;p.y+=p.vy;p.vy+=0.15;p.alpha-=0.03;p.r*=0.97;}
+}
+function drawParticles(){
+  for(const p of state.particles){
+    mc.save();mc.globalAlpha=p.alpha;mc.shadowColor=p.color;mc.shadowBlur=6;
+    mc.fillStyle=p.color;mc.beginPath();mc.arc(p.x,p.y,p.r,0,Math.PI*2);mc.fill();mc.restore();
   }
 }
 
-function updateParticles() {
-  state.particles = state.particles.filter(p => p.alpha > 0.01);
-  for (const p of state.particles) {
-    p.x += p.vx;
-    p.y += p.vy;
-    p.vy += 0.15;
-    p.alpha -= 0.03;
-    p.r *= 0.97;
+function spawnConfetti(){
+  state.confetti=[];
+  for(let i=0;i<80;i++){
+    state.confetti.push({x:rng(0,CANVAS_W),y:rng(-50,0),vx:rng(-2,2),vy:rng(2,6),r:rng(4,9),
+      color:COLORS[rngInt(0,COLORS.length-1)].fill,rot:rng(0,Math.PI*2),rotV:rng(-0.15,0.15),
+      shape:Math.random()>0.5?'circle':'rect',life:1});
   }
 }
-
-function drawParticles() {
-  for (const p of state.particles) {
-    mc.save();
-    mc.globalAlpha = p.alpha;
-    mc.shadowColor = p.color;
-    mc.shadowBlur = 6;
-    mc.fillStyle = p.color;
-    mc.beginPath();
-    mc.arc(p.x, p.y, p.r, 0, Math.PI*2);
-    mc.fill();
-    mc.restore();
-  }
+function updateConfetti(){
+  state.confetti=state.confetti.filter(p=>p.y<CANVAS_H+20&&p.life>0);
+  for(const p of state.confetti){p.x+=p.vx;p.y+=p.vy;p.rot+=p.rotV;p.life-=0.006;}
 }
-
-// ============================================================
-// Confetti
-// ============================================================
-function spawnConfetti() {
-  state.confetti = [];
-  for (let i = 0; i < 80; i++) {
-    state.confetti.push({
-      x: rng(0, CANVAS_W),
-      y: rng(-50, 0),
-      vx: rng(-2, 2),
-      vy: rng(2, 6),
-      r: rng(4, 9),
-      color: COLORS[rngInt(0, COLORS.length-1)].fill,
-      rot: rng(0, Math.PI*2),
-      rotV: rng(-0.15, 0.15),
-      shape: Math.random() > 0.5 ? 'circle' : 'rect',
-      life: 1,
-    });
-  }
-}
-
-function updateConfetti() {
-  state.confetti = state.confetti.filter(p => p.y < CANVAS_H+20 && p.life > 0);
-  for (const p of state.confetti) {
-    p.x += p.vx;
-    p.y += p.vy;
-    p.rot += p.rotV;
-    p.life -= 0.006;
-  }
-}
-
-function drawConfetti() {
-  cc.clearRect(0, 0, CANVAS_W, CANVAS_H);
-  for (const p of state.confetti) {
-    cc.save();
-    cc.globalAlpha = p.life;
-    cc.translate(p.x, p.y);
-    cc.rotate(p.rot);
-    cc.fillStyle = p.color;
-    if (p.shape === 'circle') {
-      cc.beginPath();
-      cc.arc(0, 0, p.r, 0, Math.PI*2);
-      cc.fill();
-    } else {
-      cc.fillRect(-p.r/2, -p.r/4, p.r, p.r/2);
-    }
+function drawConfetti(){
+  cc.clearRect(0,0,CANVAS_W,CANVAS_H);
+  for(const p of state.confetti){
+    cc.save();cc.globalAlpha=p.life;cc.translate(p.x,p.y);cc.rotate(p.rot);cc.fillStyle=p.color;
+    if(p.shape==='circle'){cc.beginPath();cc.arc(0,0,p.r,0,Math.PI*2);cc.fill();}
+    else{cc.fillRect(-p.r/2,-p.r/4,p.r,p.r/2);}
     cc.restore();
   }
 }
 
 // ============================================================
-// Draw grid
+// Draw grid & shooter
 // ============================================================
-function drawGrid() {
-  mc.clearRect(0, 0, CANVAS_W, CANVAS_H);
-
-  // Draw bubbles
-  for (let r = 0; r < state.grid.length; r++) {
-    for (let c = 0; c < COLS; c++) {
-      const ci = state.grid[r]?.[c];
-      if (ci !== undefined && ci >= 0) {
-        const x = bubbleX(c, r);
-        const y = bubbleY(r);
-        if (y < CANVAS_H + BUBBLE_R*2)
-          drawBubble(mc, x, y, BUBBLE_R, ci);
+function drawGrid(){
+  mc.clearRect(0,0,CANVAS_W,CANVAS_H);
+  for(let r=0;r<state.grid.length;r++){
+    for(let c=0;c<COLS;c++){
+      const ci=state.grid[r]?.[c];
+      if(ci!==undefined&&ci>=0){
+        const x=bubbleX(c,r),y=bubbleY(r);
+        if(y<CANVAS_H+BUBBLE_R*2)drawBubble(mc,x,y,BUBBLE_R,ci);
       }
     }
   }
-
-  // Draw flying projectile
-  if (state.projectile?.active) {
-    if (state.projectile.isGolden) {
-      drawGoldenBubble(mc, state.projectile.x, state.projectile.y, BUBBLE_R);
-    } else {
-      drawBubble(mc, state.projectile.x, state.projectile.y, BUBBLE_R, state.projectile.colorIndex);
-    }
+  if(state.projectile?.active){
+    if(state.projectile.isGolden)drawGoldenBubble(mc,state.projectile.x,state.projectile.y,BUBBLE_R);
+    else drawBubble(mc,state.projectile.x,state.projectile.y,BUBBLE_R,state.projectile.colorIndex);
   }
-
-  // Draw particles
   drawParticles();
 }
 
-// ============================================================
-// Draw shooter (aim arrow) — geliştirilmiş nişan sistemi
-// ============================================================
-function drawShooter() {
-  sc.clearRect(0, 0, 420, 90);
-
-  const cx = 210, cy = 70;
-  const angle = state.aimAngle;
-
-  // ---- Altın top hazırsa: tüm shooter canvas'ı parlat ----
-  if (state.isGoldenReady) {
-    const t = Date.now() / 600;
-    const pulse = 0.55 + 0.45 * Math.sin(t);
-
-    // Zemin ışıması — pırlanta mavisi
-    const bgGlow = sc.createRadialGradient(cx, cy, 5, cx, cy, 110);
-    bgGlow.addColorStop(0,   `rgba(100,220,255,${0.22 * pulse})`);
-    bgGlow.addColorStop(0.5, `rgba(40,140,220,${0.12 * pulse})`);
-    bgGlow.addColorStop(1,   'rgba(0,0,0,0)');
-    sc.fillStyle = bgGlow;
-    sc.fillRect(0, 0, 420, 90);
-
-    // Işın çizgileri (starburst)
-    sc.save();
-    sc.translate(cx, cy);
-    const rayCount = 12;
-    for (let i = 0; i < rayCount; i++) {
-      const a = (i / rayCount) * Math.PI * 2 + t * 0.4;
-      const rayLen = (30 + 28 * Math.sin(t * 1.3 + i)) * pulse;
-      const grad = sc.createLinearGradient(0, 0, Math.cos(a) * rayLen, Math.sin(a) * rayLen);
-      grad.addColorStop(0,   `rgba(200,245,255,${0.6 * pulse})`);
-      grad.addColorStop(1,   'rgba(80,180,255,0)');
-      sc.strokeStyle = grad;
-      sc.lineWidth = 1.5;
-      sc.beginPath();
-      sc.moveTo(Math.cos(a) * (BUBBLE_R + 2), Math.sin(a) * (BUBBLE_R + 2));
-      sc.lineTo(Math.cos(a) * (BUBBLE_R + rayLen), Math.sin(a) * (BUBBLE_R + rayLen));
-      sc.stroke();
+function drawShooter(){
+  sc.clearRect(0,0,420,90);
+  const cx=210,cy=70,angle=state.aimAngle;
+  if(state.isGoldenReady){
+    const t=Date.now()/600,pulse=0.55+0.45*Math.sin(t);
+    const bg=sc.createRadialGradient(cx,cy,5,cx,cy,110);
+    bg.addColorStop(0,`rgba(100,220,255,${0.22*pulse})`);
+    bg.addColorStop(0.5,`rgba(40,140,220,${0.12*pulse})`);
+    bg.addColorStop(1,'rgba(0,0,0,0)');
+    sc.fillStyle=bg; sc.fillRect(0,0,420,90);
+    sc.save(); sc.translate(cx,cy);
+    for(let i=0;i<12;i++){
+      const a=(i/12)*Math.PI*2+t*0.4;
+      const rL=(30+28*Math.sin(t*1.3+i))*pulse;
+      const g=sc.createLinearGradient(0,0,Math.cos(a)*rL,Math.sin(a)*rL);
+      g.addColorStop(0,`rgba(200,245,255,${0.6*pulse})`); g.addColorStop(1,'rgba(80,180,255,0)');
+      sc.strokeStyle=g; sc.lineWidth=1.5; sc.beginPath();
+      sc.moveTo(Math.cos(a)*(BUBBLE_R+2),Math.sin(a)*(BUBBLE_R+2));
+      sc.lineTo(Math.cos(a)*(BUBBLE_R+rL),Math.sin(a)*(BUBBLE_R+rL)); sc.stroke();
     }
     sc.restore();
-
-    // Dış halka nabzı — mavi pırlanta
-    sc.save();
-    sc.shadowColor = '#A8EEFF';
-    sc.shadowBlur = 20 * pulse;
-    sc.strokeStyle = `rgba(160,235,255,${0.75 * pulse})`;
-    sc.lineWidth = 2;
-    sc.beginPath();
-    sc.arc(cx, cy, BUBBLE_R + 6 + 4 * pulse, 0, Math.PI * 2);
-    sc.stroke();
-    // İkinci halka
-    sc.shadowBlur = 10 * pulse;
-    sc.strokeStyle = `rgba(255,255,255,${0.35 * pulse})`;
-    sc.lineWidth = 1;
-    sc.beginPath();
-    sc.arc(cx, cy, BUBBLE_R + 12 + 4 * pulse, 0, Math.PI * 2);
-    sc.stroke();
-    sc.restore();
+    sc.save(); sc.shadowColor='#A8EEFF'; sc.shadowBlur=20*pulse;
+    sc.strokeStyle=`rgba(160,235,255,${0.75*pulse})`; sc.lineWidth=2;
+    sc.beginPath(); sc.arc(cx,cy,BUBBLE_R+6+4*pulse,0,Math.PI*2); sc.stroke();
+    sc.shadowBlur=10*pulse; sc.strokeStyle=`rgba(255,255,255,${0.35*pulse})`; sc.lineWidth=1;
+    sc.beginPath(); sc.arc(cx,cy,BUBBLE_R+12+4*pulse,0,Math.PI*2); sc.stroke(); sc.restore();
   }
-
-  // ---- Nişan çizgisi ----
-  const startX = cx + Math.cos(angle) * (BUBBLE_R + 4);
-  const startY = cy + Math.sin(angle) * (BUBBLE_R + 4);
-  const lineEndX = cx + Math.cos(angle) * 80;
-  const lineEndY = cy + Math.sin(angle) * 80;
-
+  // Nişan
+  const startX=cx+Math.cos(angle)*(BUBBLE_R+4),startY=cy+Math.sin(angle)*(BUBBLE_R+4);
+  const endX=cx+Math.cos(angle)*80,endY=cy+Math.sin(angle)*80;
   sc.save();
-  sc.strokeStyle = state.isGoldenReady ? 'rgba(180,245,255,0.95)' : 'rgba(255,215,0,0.85)';
-  sc.lineWidth = 2.5;
-  sc.setLineDash([8, 5]);
-  sc.shadowColor = state.isGoldenReady ? '#A8EEFF' : '#FFD700';
-  sc.shadowBlur = state.isGoldenReady ? 12 : 6;
-  sc.beginPath();
-  sc.moveTo(startX, startY);
-  sc.lineTo(lineEndX, lineEndY);
-  sc.stroke();
-
-  sc.setLineDash([]);
-  sc.shadowBlur = 10;
-  const headLen = 16;
-  const headAngle = 0.38;
-  const tipX = lineEndX;
-  const tipY = lineEndY;
-
-  sc.strokeStyle = state.isGoldenReady ? '#C8F0FF' : '#FFD700';
-  sc.lineWidth = 3;
-  sc.beginPath();
-  sc.moveTo(startX, startY);
-  sc.lineTo(tipX - Math.cos(angle) * 6, tipY - Math.sin(angle) * 6);
-  sc.stroke();
-
-  sc.fillStyle = state.isGoldenReady ? '#C8F0FF' : '#FFD700';
-  sc.beginPath();
-  sc.moveTo(tipX, tipY);
-  sc.lineTo(tipX - headLen * Math.cos(angle - headAngle), tipY - headLen * Math.sin(angle - headAngle));
-  sc.lineTo(tipX - headLen * 0.5 * Math.cos(angle), tipY - headLen * 0.5 * Math.sin(angle));
-  sc.lineTo(tipX - headLen * Math.cos(angle + headAngle), tipY - headLen * Math.sin(angle + headAngle));
-  sc.closePath();
-  sc.fill();
-  sc.strokeStyle = 'rgba(255,140,0,0.8)';
-  sc.lineWidth = 1;
-  sc.stroke();
-  sc.restore();
-
-  // ---- Ana top (pırlanta mı normal mi?) ----
-  if (state.isGoldenReady) {
-    drawGoldenBubble(sc, cx, cy, BUBBLE_R);
-  } else {
-    drawBubble(sc, cx, cy, BUBBLE_R, state.currentColor);
-  }
-  // (Pırlanta sayacı artık sağ panelde HTML olarak gösteriliyor)
+  sc.strokeStyle=state.isGoldenReady?'rgba(180,245,255,0.95)':'rgba(255,215,0,0.85)';
+  sc.lineWidth=2.5; sc.setLineDash([8,5]);
+  sc.shadowColor=state.isGoldenReady?'#A8EEFF':'#FFD700'; sc.shadowBlur=state.isGoldenReady?12:6;
+  sc.beginPath(); sc.moveTo(startX,startY); sc.lineTo(endX,endY); sc.stroke();
+  sc.setLineDash([]); sc.shadowBlur=10;
+  const hl=16,ha=0.38;
+  sc.strokeStyle=state.isGoldenReady?'#C8F0FF':'#FFD700'; sc.lineWidth=3;
+  sc.beginPath(); sc.moveTo(startX,startY); sc.lineTo(endX-Math.cos(angle)*6,endY-Math.sin(angle)*6); sc.stroke();
+  sc.fillStyle=state.isGoldenReady?'#C8F0FF':'#FFD700';
+  sc.beginPath(); sc.moveTo(endX,endY);
+  sc.lineTo(endX-hl*Math.cos(angle-ha),endY-hl*Math.sin(angle-ha));
+  sc.lineTo(endX-hl*0.5*Math.cos(angle),endY-hl*0.5*Math.sin(angle));
+  sc.lineTo(endX-hl*Math.cos(angle+ha),endY-hl*Math.sin(angle+ha));
+  sc.closePath(); sc.fill(); sc.restore();
+  if(state.isGoldenReady)drawGoldenBubble(sc,cx,cy,BUBBLE_R);
+  else drawBubble(sc,cx,cy,BUBBLE_R,state.currentColor);
 }
 
-// ============================================================
-// Draw preview
-// ============================================================
-function drawPreview() {
-  pc.clearRect(0, 0, 36, 36);
-  drawBubble(pc, 18, 18, 15, state.nextColor);
+function drawPreview(){
+  pc.clearRect(0,0,36,36);
+  drawBubble(pc,18,18,15,state.nextColor);
 }
 
-// ============================================================
-// Draw passes
-// ============================================================
-function drawDiamondSlots(flashSlot = -1) {
-  const container = document.getElementById('diamond-slots');
-  if (!container) return;
-  container.innerHTML = '';
-  for (let i = 0; i < 3; i++) {
-    const filled = i < state.goldenCount;
-    const div = document.createElement('div');
-    div.className = 'diamond-slot' + (filled ? ' filled' : '');
-    if (i === flashSlot) div.classList.add('flash');
-
-    // SVG pırlanta ikonu
-    const fillColor   = filled ? 'url(#dg' + i + ')' : 'rgba(100,200,255,0.08)';
-    const strokeColor = filled ? 'rgba(200,245,255,0.85)' : 'rgba(100,200,255,0.25)';
-    div.innerHTML = `<svg viewBox="-10 -10 20 24" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="dg${i}" x1="0" y1="-10" x2="0" y2="14" gradientUnits="userSpaceOnUse">
-          <stop offset="0%"   stop-color="#E8F8FF"/>
-          <stop offset="30%"  stop-color="#7DD8FF"/>
-          <stop offset="70%"  stop-color="#2090D0"/>
-          <stop offset="100%" stop-color="#0A4080"/>
-        </linearGradient>
-      </defs>
+function drawDiamondSlots(flashSlot=-1){
+  const container=document.getElementById('diamond-slots');
+  if(!container)return;
+  container.innerHTML='';
+  for(let i=0;i<3;i++){
+    const filled=i<state.goldenCount;
+    const div=document.createElement('div');
+    div.className='diamond-slot'+(filled?' filled':'');
+    if(i===flashSlot)div.classList.add('flash');
+    const fc=filled?'url(#dg'+i+')':'rgba(100,200,255,0.08)';
+    const sc2=filled?'rgba(200,245,255,0.85)':'rgba(100,200,255,0.25)';
+    div.innerHTML=`<svg viewBox="-10 -10 20 24" xmlns="http://www.w3.org/2000/svg">
+      <defs><linearGradient id="dg${i}" x1="0" y1="-10" x2="0" y2="14" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#E8F8FF"/><stop offset="30%" stop-color="#7DD8FF"/>
+        <stop offset="70%" stop-color="#2090D0"/><stop offset="100%" stop-color="#0A4080"/>
+      </linearGradient></defs>
       <polygon points="-5.5,-2.5 5.5,-2.5 8.5,1 0,14 -8.5,1"
-        fill="${fillColor}" stroke="${strokeColor}" stroke-width="0.8"/>
+        fill="${fc}" stroke="${sc2}" stroke-width="0.8"/>
       <polyline points="-5.5,-2.5 0,3 5.5,-2.5"
-        fill="none" stroke="rgba(255,255,255,${filled ? '0.35' : '0.1'})" stroke-width="0.5"/>
+        fill="none" stroke="rgba(255,255,255,${filled?'0.35':'0.1'})" stroke-width="0.5"/>
     </svg>`;
     container.appendChild(div);
   }
 }
 
 // ============================================================
-// Shoot projectile
+// SHOOT — Ana ateş fonksiyonu (backend entegreli)
 // ============================================================
-function shoot() {
-  if (state.phase !== 'playing') return;
+function shoot(){
+  // API çağrısı sırasında veya oyun bittiğinde atış engellenir
+  if(state.phase!=='playing')return;
 
-  // Her atışta bahis öde
-  const bet = BET_STEPS[state.betIndex];
-  if (state.balance < bet) {
-    // Bakiye yetersiz — oyun biter
-    triggerGameOver();
-    return;
-  }
-  state.balance -= bet;
-  updateBalanceDisplay();
+  const isGolden=state.isGoldenReady;
 
-  const isGolden = state.isGoldenReady;
-
-  state.projectile = {
-    colorIndex: state.currentColor,
-    isGolden: isGolden,
-    x: 210,
-    y: CANVAS_H - 25,
-    vx: Math.cos(state.aimAngle) * 9,
-    vy: Math.sin(state.aimAngle) * 9,
-    active: true,
+  // Görsel olarak balonu anında başlat
+  state.projectile={
+    colorIndex:state.currentColor,
+    isGolden,
+    x:210, y:CANVAS_H-25,
+    vx:Math.cos(state.aimAngle)*9,
+    vy:Math.sin(state.aimAngle)*9,
+    active:true,
   };
 
-  if (isGolden) {
-    state.isGoldenReady = false;
-    state.goldenCount = 0;
+  if(isGolden){
+    state.isGoldenReady=false;
+    state.goldenCount=0;
     drawDiamondSlots();
   }
 
-  state.currentColor = state.nextColor;
-  state.nextColor = pickNextColor();
+  state.currentColor=state.nextColor;
+  state.nextColor=pickNextColor();
   drawPreview();
   playShoot();
-  state.phase = 'shooting';
+  state.phase='shooting';
 }
 
 // ============================================================
-// Update projectile physics
+// Projectile physics
 // ============================================================
-function updateProjectile() {
-  const p = state.projectile;
-  if (!p || !p.active) return;
-
-  p.x += p.vx;
-  p.y += p.vy;
-
-  // Wall bouncing
-  if (p.x - BUBBLE_R < 0) { p.x = BUBBLE_R; p.vx = Math.abs(p.vx); }
-  if (p.x + BUBBLE_R > CANVAS_W) { p.x = CANVAS_W - BUBBLE_R; p.vx = -Math.abs(p.vx); }
-
-  // Ceiling hit
-  if (p.y - BUBBLE_R < 0) {
-    landProjectile(0, Math.round((p.x - 20) / (BUBBLE_R*2+2)));
-    return;
-  }
-
-  // Check collision with grid bubbles
-  for (let r = 0; r < state.grid.length; r++) {
-    for (let c = 0; c < COLS; c++) {
-      if (state.grid[r]?.[c] < 0) continue;
-      const gx = bubbleX(c, r);
-      const gy = bubbleY(r);
-      const dist = Math.hypot(p.x - gx, p.y - gy);
-      if (dist < BUBBLE_R*1.9) {
-        const snap = snapToGrid(p.x, p.y);
-        if (snap.row >= 0) {
-          landProjectile(snap.row, snap.col);
-        } else {
-          landProjectile(r, c); // fallback
-        }
+function updateProjectile(){
+  const p=state.projectile;
+  if(!p||!p.active)return;
+  p.x+=p.vx; p.y+=p.vy;
+  if(p.x-BUBBLE_R<0){p.x=BUBBLE_R;p.vx=Math.abs(p.vx);}
+  if(p.x+BUBBLE_R>CANVAS_W){p.x=CANVAS_W-BUBBLE_R;p.vx=-Math.abs(p.vx);}
+  if(p.y-BUBBLE_R<0){landProjectile(0,Math.round((p.x-20)/(BUBBLE_R*2+2)));return;}
+  for(let r=0;r<state.grid.length;r++){
+    for(let c=0;c<COLS;c++){
+      if(state.grid[r]?.[c]<0)continue;
+      const gx=bubbleX(c,r),gy=bubbleY(r);
+      if(Math.hypot(p.x-gx,p.y-gy)<BUBBLE_R*1.9){
+        const snap=snapToGrid(p.x,p.y);
+        landProjectile(snap.row>=0?snap.row:r, snap.row>=0?snap.col:c);
         return;
       }
     }
   }
-
-  // Off screen bottom (misfire)
-  if (p.y > CANVAS_H + 20) {
-    misfire();
-  }
+  if(p.y>CANVAS_H+20)misfire();
 }
 
 // ============================================================
-// Land projectile in grid
+// Land projectile — backend spin çağrısı burada yapılır
 // ============================================================
-function landProjectile(row, col) {
-  const p = state.projectile;
-  p.active = false;
+async function landProjectile(row,col){
+  const p=state.projectile;
+  p.active=false;
 
-  // ---- PIRLANTA: Geniş alan patlaması ----
-  if (p.isGolden) {
-    triggerGoldenExplosion(row, col);
+  if(p.isGolden){
+    await triggerGoldenExplosion(row,col);
     return;
   }
 
-  // Ensure row exists
-  while (state.grid.length <= row) state.grid.push(new Array(COLS).fill(-1));
-  if (!state.grid[row]) state.grid[row] = new Array(COLS).fill(-1);
+  while(state.grid.length<=row)state.grid.push(new Array(COLS).fill(-1));
+  if(!state.grid[row])state.grid[row]=new Array(COLS).fill(-1);
+  state.grid[row][col]=p.colorIndex;
 
-  // Place bubble
-  state.grid[row][col] = p.colorIndex;
+  const{count:popped,cluster}=popCluster(row,col);
+  const bet=BET_STEPS[state.betIndex];
+  const clustered=popped>=3;
 
-  // Check cluster
-  const cluster = findCluster(row, col);
-  if (cluster.length >= 3) {
-    popCluster(row, col);
+  // Backend'e spin gönder
+  state.phase='waitingApi';
+  let spinResult=null;
+  try{
+    spinResult=await callSpin(bet,clustered,popped,false);
+  }catch(err){
+    if(err.message==='SESSION_EXPIRED')return;
+    showError('Bağlantı hatası — tekrar deniyor...');
+    // Hata durumunda misfire gibi davran ama bakiyeyi düşme
+    state.phase='playing';
+    if(checkGameOver())return;
+    return;
+  }
 
-    const mult = pickMultiplier();
-    const betAmt = BET_STEPS[state.betIndex];
-    const winAmt = mult > 0 ? Math.round(betAmt * mult) : 0;
+  if(!spinResult){state.phase='playing';if(checkGameOver())return;return;}
 
-    if (winAmt > 0) {
-      state.balance += winAmt;
-      updateBalanceDisplay();
-    }
+  // Backend'den gelen değerleri uygula
+  state.balance=parseFloat(spinResult.balance)||state.balance;
+  updateBalanceDisplay();
 
-    // 0x çıktıysa pırlanta sayacını artırma şansı
-    if (mult === 0 && Math.random() < P_DIAMOND_TRIGGER) {
-      incrementGoldenCounter();
-    }
+  // Pırlanta state'ini senkronize et
+  syncDiamondState(spinResult.diamond);
 
-    showWin(mult, winAmt); // oyun devam eder
+  const mult=spinResult.mult||0;
+  const winAmount=spinResult.winAmount||0;
 
-  } else {
-    if (checkGameOver()) return;
-    misfire();
+  if(clustered&&mult>0){
+    showWin(mult,winAmount);
+  }else if(clustered&&mult===0){
+    // Cluster var ama 0x çıktı
+    state.phase='playing';
+    if(checkGameOver())return;
+  }else{
+    // Misfire
+    if(checkGameOver())return;
+    state.phase='playing';
   }
 }
 
 // ============================================================
-// Altın sayaç artışı
+// Pırlanta state senkronizasyonu (backend'den)
 // ============================================================
-function incrementGoldenCounter() {
-  if (state.isGoldenReady) return;
-  const newSlot = state.goldenCount;
-  state.goldenCount++;
-  state.goldenFlashSlot = newSlot;
-  state.goldenFlashTime = Date.now();
-  drawDiamondSlots(newSlot); // HTML güncelle + flash
-  triggerDiamondPulse();     // Ekran pulse efekti
-  if (state.goldenCount >= 3) {
-    state.goldenCount = 3;
-    state.isGoldenReady = true;
-    showGoldenReadyAlert();
+function syncDiamondState(diamond){
+  if(!diamond)return;
+  const prevCount=state.goldenCount;
+  const newCount=diamond.count;
+  state.isGoldenReady=diamond.ready;
+
+  if(newCount>prevCount){
+    // Yeni pırlanta kazanıldı
+    const flashSlot=newCount-1;
+    state.goldenCount=newCount;
+    state.goldenFlashSlot=flashSlot;
+    state.goldenFlashTime=Date.now();
+    drawDiamondSlots(flashSlot);
+    triggerDiamondPulse();
+    if(diamond.ready)showGoldenReadyAlert();
+  }else{
+    state.goldenCount=newCount;
+    drawDiamondSlots();
   }
 }
 
-function triggerDiamondPulse() {
-  const el = document.getElementById('diamond-pulse');
-  if (!el) return;
-  // Animasyonu sıfırla ve yeniden tetikle
-  el.classList.remove('active');
-  void el.offsetWidth; // reflow
-  el.classList.add('active');
-  setTimeout(() => el.classList.remove('active'), 900);
-}
-
-function showGoldenReadyAlert() {
-  // Shooter panel üzerinde kısa bir "ALTIN TOP HAZIR!" bildirimi
-  const el = document.getElementById('golden-alert');
-  if (!el) return;
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 2500);
-}
-
 // ============================================================
-// Altın top patlaması — 3 birim yarıçap
+// Altın top patlaması (backend'e gönderilir)
 // ============================================================
-function triggerGoldenExplosion(centerRow, centerCol) {
-  const GOLDEN_RADIUS = 3; // birim cinsinden
-  let poppedCount = 0;
+async function triggerGoldenExplosion(centerRow,centerCol){
+  const GOLDEN_RADIUS=3;
+  while(state.grid.length<=centerRow)state.grid.push(new Array(COLS).fill(-1));
+  if(!state.grid[centerRow])state.grid[centerRow]=new Array(COLS).fill(-1);
+  const cx=bubbleX(centerCol,centerRow),cy=bubbleY(centerRow);
 
-  // Merkeze yerleştir (görsel için kısa süre)
-  while (state.grid.length <= centerRow) state.grid.push(new Array(COLS).fill(-1));
-  if (!state.grid[centerRow]) state.grid[centerRow] = new Array(COLS).fill(-1);
-
-  const cx = bubbleX(centerCol, centerRow);
-  const cy = bubbleY(centerRow);
-
-  // Tüm grid'i tara, merkeze mesafesi GOLDEN_RADIUS * çap içinde olanları patlat
-  for (let r = 0; r < state.grid.length; r++) {
-    for (let c = 0; c < COLS; c++) {
-      if (state.grid[r]?.[c] < 0) continue;
-      const bx = bubbleX(c, r);
-      const by = bubbleY(r);
-      const dist = Math.hypot(cx - bx, cy - by);
-      if (dist <= GOLDEN_RADIUS * (BUBBLE_R * 2 + 2)) {
-        spawnPopParticles(bx, by, state.grid[r][c]);
-        spawnGoldenParticles(bx, by);
-        state.grid[r][c] = -1;
-        poppedCount++;
+  let popped=0;
+  for(let r=0;r<state.grid.length;r++){
+    for(let c=0;c<COLS;c++){
+      if(state.grid[r]?.[c]<0)continue;
+      const bx=bubbleX(c,r),by=bubbleY(r);
+      if(Math.hypot(cx-bx,cy-by)<=GOLDEN_RADIUS*(BUBBLE_R*2+2)){
+        spawnPopParticles(bx,by,state.grid[r][c]);
+        spawnGoldenParticles(bx,by);
+        state.grid[r][c]=-1;
+        popped++;
       }
     }
   }
-
-  // Altın patlama halka efekti
-  spawnGoldenShockwave(cx, cy);
-
-  // Floating balonları da temizle
-  const floating = findFloating();
-  for (const [r, c] of floating) {
-    if (state.grid[r]?.[c] >= 0) {
-      spawnPopParticles(bubbleX(c,r), bubbleY(r), state.grid[r][c]);
-      state.grid[r][c] = -1;
-      poppedCount++;
-    }
+  spawnGoldenShockwave(cx,cy);
+  const floating=findFloating();
+  for(const[r,c]of floating){
+    if(state.grid[r]?.[c]>=0){spawnPopParticles(bubbleX(c,r),bubbleY(r),state.grid[r][c]);state.grid[r][c]=-1;popped++;}
   }
 
-  // Pırlanta çarpanı — pickDiamondMultiplier kullan
-  const goldenMult = pickDiamondMultiplier();
-  const betAmt = BET_STEPS[state.betIndex];
-  const winAmt = Math.round(betAmt * goldenMult);
-  state.balance += winAmt;
+  const bet=BET_STEPS[state.betIndex];
+  state.phase='waitingApi';
+  let spinResult=null;
+  try{
+    spinResult=await callSpin(bet,true,popped,true);
+  }catch(err){
+    if(err.message==='SESSION_EXPIRED')return;
+    showError('Bağlantı hatası');
+    state.phase='playing';
+    return;
+  }
+
+  if(!spinResult){state.phase='playing';return;}
+
+  state.balance=parseFloat(spinResult.balance)||state.balance;
   updateBalanceDisplay();
+  syncDiamondState(spinResult.diamond);
 
-  showGoldenWin(goldenMult, winAmt);
+  const goldenMult=spinResult.mult||4;
+  const winAmount=spinResult.winAmount||0;
+  showGoldenWin(goldenMult,winAmount);
 }
 
-// Altın patlama parçacıkları
-function spawnGoldenParticles(x, y) {
-  for (let i = 0; i < 8; i++) {
-    const angle = rng(0, Math.PI*2);
-    const speed = rng(2, 6);
-    state.particles.push({
-      x, y,
-      vx: Math.cos(angle)*speed,
-      vy: Math.sin(angle)*speed - 1.5,
-      r: rng(4, 9),
-      color: ['#FFD700','#FFA500','#FFFDE0','#FF8C00'][Math.floor(Math.random()*4)],
-      alpha: 1,
-      life: 1,
-    });
+// ============================================================
+// Altın parçacıklar ve şok dalgası
+// ============================================================
+function spawnGoldenParticles(x,y){
+  for(let i=0;i<8;i++){
+    const angle=rng(0,Math.PI*2),speed=rng(2,6);
+    state.particles.push({x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed-1.5,
+      r:rng(4,9),color:['#FFD700','#FFA500','#FFFDE0','#FF8C00'][Math.floor(Math.random()*4)],alpha:1});
   }
 }
 
-// Altın şok dalgası (büyüyen halka)
-let goldenShockwaves = [];
-function spawnGoldenShockwave(x, y) {
-  goldenShockwaves.push({ x, y, r: BUBBLE_R, maxR: BUBBLE_R * 2 * 3.5, alpha: 1 });
+let goldenShockwaves=[];
+function spawnGoldenShockwave(x,y){goldenShockwaves.push({x,y,r:BUBBLE_R,maxR:BUBBLE_R*2*3.5,alpha:1});}
+function updateGoldenShockwaves(){
+  goldenShockwaves=goldenShockwaves.filter(s=>s.alpha>0.01);
+  for(const s of goldenShockwaves){s.r+=8;s.alpha-=0.04;}
 }
-
-function updateGoldenShockwaves() {
-  goldenShockwaves = goldenShockwaves.filter(s => s.alpha > 0.01);
-  for (const s of goldenShockwaves) {
-    s.r += 8;
-    s.alpha -= 0.04;
-  }
-}
-
-function drawGoldenShockwaves() {
-  for (const s of goldenShockwaves) {
-    mc.save();
-    mc.globalAlpha = s.alpha;
-    mc.strokeStyle = '#A8EEFF';
-    mc.lineWidth = 3;
-    mc.shadowColor = '#60D0FF';
-    mc.shadowBlur = 16;
-    mc.beginPath();
-    mc.arc(s.x, s.y, s.r, 0, Math.PI*2);
-    mc.stroke();
-    mc.globalAlpha = s.alpha * 0.5;
-    mc.beginPath();
-    mc.arc(s.x, s.y, s.r * 0.65, 0, Math.PI*2);
-    mc.stroke();
+function drawGoldenShockwaves(){
+  for(const s of goldenShockwaves){
+    mc.save();mc.globalAlpha=s.alpha;mc.strokeStyle='#A8EEFF';mc.lineWidth=3;
+    mc.shadowColor='#60D0FF';mc.shadowBlur=16;
+    mc.beginPath();mc.arc(s.x,s.y,s.r,0,Math.PI*2);mc.stroke();
+    mc.globalAlpha=s.alpha*0.5;mc.beginPath();mc.arc(s.x,s.y,s.r*0.65,0,Math.PI*2);mc.stroke();
     mc.restore();
   }
 }
 
 // ============================================================
-// Altın kazanç overlay'i
+// Pırlanta UI efektleri
 // ============================================================
-function showGoldenWin(mult, amt) {
-  state.phase = 'win';
-  const overlay = document.getElementById('win-overlay');
-  document.getElementById('win-mult-text').textContent = '💎 ' + mult + 'X 💎';
-  document.getElementById('win-amount-text').textContent = fmtTL(amt) + ' KAZANDINIZ!';
-  overlay.style.background = 'radial-gradient(ellipse at center, rgba(80,200,255,0.3) 0%, rgba(0,0,0,0.88) 100%)';
-
-  const multEl = document.getElementById('win-mult-text');
-  multEl.style.animation = 'none';
-  requestAnimationFrame(() => { multEl.style.animation = ''; });
-
-  overlay.classList.add('show');
-  spawnConfetti();
-  spawnConfetti();
-  playWin();
-
-  if (winTimeout) clearTimeout(winTimeout);
-  winTimeout = setTimeout(() => {
-    overlay.classList.remove('show');
-    overlay.style.background = '';
-    state.confetti = [];
-    cc.clearRect(0, 0, CANVAS_W, CANVAS_H);
-    state.phase = 'playing'; // oyun devam eder
-  }, 3000);
+function triggerDiamondPulse(){
+  const el=document.getElementById('diamond-pulse');
+  if(!el)return;
+  el.classList.remove('active');
+  void el.offsetWidth;
+  el.classList.add('active');
+  setTimeout(()=>el.classList.remove('active'),900);
 }
-
-// ============================================================
-// Misfire — eşleşme olmadan top yerleşti, saha dolmaya devam eder
-// ============================================================
-function misfire() {
-  state.projectile.active = false;
-  if (checkGameOver()) return;
-  state.phase = 'playing';
+function showGoldenReadyAlert(){
+  const el=document.getElementById('golden-alert');
+  if(!el)return;
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2500);
 }
 
 // ============================================================
 // Game Over
 // ============================================================
-function checkGameOver() {
-  // En alttaki dolu satırın Y konumunu kontrol et
-  for (let r = state.grid.length - 1; r >= 0; r--) {
-    for (let c = 0; c < COLS; c++) {
-      if (state.grid[r]?.[c] >= 0) {
-        const y = bubbleY(r);
-        if (y + BUBBLE_R >= CANVAS_H - 10) {
-          triggerGameOver();
-          return true;
-        }
-        break; // Bu satırda top var, daha aşağısına bakma
+function checkGameOver(){
+  for(let r=state.grid.length-1;r>=0;r--){
+    for(let c=0;c<COLS;c++){
+      if(state.grid[r]?.[c]>=0){
+        if(bubbleY(r)+BUBBLE_R>=CANVAS_H-10){triggerGameOver();return true;}
+        break;
       }
     }
   }
   return false;
 }
+function triggerGameOver(){
+  state.phase='gameover';
+  if(winTimeout)clearTimeout(winTimeout);
+  document.getElementById('win-overlay').classList.remove('show');
+  setBetLocked(false);
+  playGameOver();
+  document.getElementById('play-btn').disabled=false;
+  showInfoOverlay('💀 OYUN BİTTİ','Toplar alt sınıra ulaştı!<br><strong style="color:#FFD700">Yeni tur için OYNA\'ya bas.</strong>');
+}
 
-function showInfoOverlay(title, text) {
-  const el = document.getElementById('info-overlay');
-  el.querySelector('.info-title').textContent = '';
-  el.querySelector('.info-title').innerHTML = title;
-  el.querySelector('.info-text').innerHTML = text;
+function showInfoOverlay(title,text){
+  const el=document.getElementById('info-overlay');
+  el.querySelector('.info-title').innerHTML=title;
+  el.querySelector('.info-text').innerHTML=text;
   el.classList.remove('hidden');
 }
 
-function triggerGameOver() {
-  state.phase = 'gameover';
-  if (winTimeout) clearTimeout(winTimeout);
-  document.getElementById('win-overlay').classList.remove('show');
-  setBetLocked(false); // Tur bitti — bet kilidi aç
-  playGameOver();
-  showInfoOverlay('💀 OYUN BİTTİ', 'Toplar alt sınıra ulaştı!<br><strong style="color:#FFD700">Yeni tur için OYNA\'ya bas.</strong>');
-}
-
-
-function addRows() {
-  const usedColors = [];
-  for (let r = 0; r < state.grid.length; r++)
-    for (let c = 0; c < COLS; c++)
-      if (state.grid[r]?.[c] >= 0) usedColors.push(state.grid[r][c]);
-
-  const newRow = [];
-  for (let c = 0; c < COLS; c++) {
-    newRow.push(usedColors.length > 0 ? usedColors[rngInt(0, usedColors.length-1)] : rngInt(0, COLORS.length-1));
-  }
-
-  // Shift all rows down
-  for (let r = state.grid.length-1; r >= 1; r--) {
-    state.grid[r] = state.grid[r-1];
-  }
-  state.grid[0] = newRow;
-}
-
 // ============================================================
-// Show win overlay
+// Win overlays
 // ============================================================
-let winTimeout = null;
-function showWin(mult, amt) {
-  if (mult === 0) {
-    state.phase = 'playing';
-    return;
-  }
-
-  state.phase = 'win';
-  const overlay = document.getElementById('win-overlay');
-  const isBigWin   = mult >= 6.0 && mult < 10.0;
-  const isMegaWin  = mult >= 10.0;
-
-  // Çarpan metni ve renk
-  let multLabel = formatMult(mult) + 'X';
-  if (isMegaWin)  multLabel = '🔥 ' + formatMult(mult) + 'X 🔥';
-  else if (isBigWin) multLabel = '⚡ ' + formatMult(mult) + 'X ⚡';
-
-  document.getElementById('win-mult-text').textContent = multLabel;
-  document.getElementById('win-amount-text').textContent = fmtTL(amt) + ' KAZANDINIZ!';
-
-  // Büyük kazançta özel arka plan
-  if (isMegaWin) {
-    overlay.style.background = 'radial-gradient(ellipse at center, rgba(255,80,0,0.45) 0%, rgba(0,0,0,0.92) 100%)';
-  } else if (isBigWin) {
-    overlay.style.background = 'radial-gradient(ellipse at center, rgba(255,180,0,0.35) 0%, rgba(0,0,0,0.90) 100%)';
-  } else {
-    overlay.style.background = '';
-  }
-
-  const multEl = document.getElementById('win-mult-text');
-  const amtEl  = document.getElementById('win-amount-text');
-  multEl.style.animation = 'none';
-  amtEl.style.animation  = 'none';
-  requestAnimationFrame(() => { multEl.style.animation = ''; amtEl.style.animation = ''; });
-
+let winTimeout=null;
+function showWin(mult,amt){
+  if(mult===0){state.phase='playing';return;}
+  state.phase='win';
+  const overlay=document.getElementById('win-overlay');
+  const isBig=mult>=6&&mult<10,isMega=mult>=10;
+  let label=formatMult(mult)+'X';
+  if(isMega)label='🔥 '+formatMult(mult)+'X 🔥';
+  else if(isBig)label='⚡ '+formatMult(mult)+'X ⚡';
+  document.getElementById('win-mult-text').textContent=label;
+  document.getElementById('win-amount-text').textContent=fmtTL(amt)+' KAZANDINIZ!';
+  overlay.style.background=isMega?'radial-gradient(ellipse at center, rgba(255,80,0,0.45) 0%, rgba(0,0,0,0.92) 100%)':
+    isBig?'radial-gradient(ellipse at center, rgba(255,180,0,0.35) 0%, rgba(0,0,0,0.90) 100%)':'';
+  const mEl=document.getElementById('win-mult-text');
+  mEl.style.animation='none'; requestAnimationFrame(()=>{mEl.style.animation='';});
   overlay.classList.add('show');
-
-  // Büyük kazançta çoklu konfeti
   spawnConfetti();
-  if (isBigWin)  spawnConfetti();
-  if (isMegaWin) { spawnConfetti(); spawnConfetti(); }
-
+  if(isBig)spawnConfetti();
+  if(isMega){spawnConfetti();spawnConfetti();}
   playWin();
-
-  const delay = isMegaWin ? 3500 : isBigWin ? 2800 : 2000;
-  if (winTimeout) clearTimeout(winTimeout);
-  winTimeout = setTimeout(() => {
+  const delay=isMega?3500:isBig?2800:2000;
+  if(winTimeout)clearTimeout(winTimeout);
+  winTimeout=setTimeout(()=>{
     overlay.classList.remove('show');
-    overlay.style.background = '';
-    state.confetti = [];
-    cc.clearRect(0, 0, CANVAS_W, CANVAS_H);
-    state.phase = 'playing';
-  }, delay);
+    overlay.style.background='';
+    state.confetti=[]; cc.clearRect(0,0,CANVAS_W,CANVAS_H);
+    state.phase='playing';
+    if(checkGameOver())return;
+  },delay);
 }
 
-function formatMult(m) {
-  if (m === Math.floor(m)) return m.toString();
-  return m.toFixed(1);
+function showGoldenWin(mult,amt){
+  state.phase='win';
+  const overlay=document.getElementById('win-overlay');
+  document.getElementById('win-mult-text').textContent='💎 '+mult+'X 💎';
+  document.getElementById('win-amount-text').textContent=fmtTL(amt)+' KAZANDINIZ!';
+  overlay.style.background='radial-gradient(ellipse at center, rgba(80,200,255,0.3) 0%, rgba(0,0,0,0.88) 100%)';
+  const mEl=document.getElementById('win-mult-text');
+  mEl.style.animation='none'; requestAnimationFrame(()=>{mEl.style.animation='';});
+  overlay.classList.add('show');
+  spawnConfetti();spawnConfetti();
+  playWin();
+  if(winTimeout)clearTimeout(winTimeout);
+  winTimeout=setTimeout(()=>{
+    overlay.classList.remove('show');
+    overlay.style.background='';
+    state.confetti=[]; cc.clearRect(0,0,CANVAS_W,CANVAS_H);
+    state.phase='playing';
+    if(checkGameOver())return;
+  },3000);
+}
+
+function formatMult(m){return m===Math.floor(m)?m.toString():m.toFixed(1);}
+
+function misfire(){
+  state.projectile.active=false;
+  if(checkGameOver())return;
+  state.phase='playing';
 }
 
 // ============================================================
-// Update balance display
+// Balance display
 // ============================================================
-function updateBalanceDisplay() {
-  document.getElementById('balance-display').textContent = fmtTL(state.balance);
+function updateBalanceDisplay(){
+  const el=document.getElementById('balance-display');
+  el.textContent=fmtTL(state.balance);
+  el.classList.remove('loading');
 }
-
-function updateBetDisplay() {
-  document.getElementById('bet-amount').textContent = '₺ ' + BET_STEPS[state.betIndex];
+function updateBetDisplay(){
+  document.getElementById('bet-amount').textContent='₺ '+BET_STEPS[state.betIndex];
 }
-
-function setBetLocked(locked) {
-  const ctrl = document.querySelector('.bet-control');
-  if (locked) {
-    ctrl.classList.add('locked');
-  } else {
-    ctrl.classList.remove('locked');
-  }
+function setBetLocked(locked){
+  document.querySelector('.bet-control').classList.toggle('locked',locked);
 }
 
 // ============================================================
-// Aim handling — scale'e göre düzeltilmiş koordinatlar
+// Aim & input
 // ============================================================
-
-// getBoundingClientRect zaten scale uygulanmış koordinat döndürür,
-// ama canvas'ın internal boyutu değişmediği için oranlamak gerekir.
-function getScaledCoords(clientX, clientY, element, internalW, internalH) {
-  const rect = element.getBoundingClientRect();
-  const scaleX = internalW / rect.width;
-  const scaleY = internalH / rect.height;
-  return {
-    x: (clientX - rect.left) * scaleX,
-    y: (clientY - rect.top)  * scaleY,
-  };
+function getScaledCoords(clientX,clientY,element,iW,iH){
+  const rect=element.getBoundingClientRect();
+  return{x:(clientX-rect.left)*(iW/rect.width),y:(clientY-rect.top)*(iH/rect.height)};
 }
 
-mainCanvas.addEventListener('mousemove', (e) => {
-  if (state.phase !== 'playing') return;
-  const { x: mx, y: my } = getScaledCoords(e.clientX, e.clientY, mainCanvas, CANVAS_W, CANVAS_H);
-  const dx = mx - 210;
-  const dy = my - (CANVAS_H - 20);
-  let angle = Math.atan2(dy, dx);
-  angle = Math.max(-Math.PI + 0.2, Math.min(-0.2, angle));
-  state.aimAngle = angle;
-});
+function updateAim(x,y,fromShooter=false){
+  if(state.phase!=='playing')return;
+  const refY=fromShooter?70:(CANVAS_H-20);
+  const dx=x-210,dy=y-refY;
+  let angle=Math.atan2(dy,dx);
+  angle=Math.max(-Math.PI+0.2,Math.min(-0.2,angle));
+  state.aimAngle=angle;
+}
 
-shooterCanvas.addEventListener('mousemove', (e) => {
-  if (state.phase !== 'playing') return;
-  const { x: mx, y: my } = getScaledCoords(e.clientX, e.clientY, shooterCanvas, 420, 90);
-  const dx = mx - 210;
-  const dy = my - 70;
-  let angle = Math.atan2(dy, dx);
-  angle = Math.max(-Math.PI + 0.2, Math.min(-0.2, angle));
-  state.aimAngle = angle;
+mainCanvas.addEventListener('mousemove',(e)=>{
+  const{x,y}=getScaledCoords(e.clientX,e.clientY,mainCanvas,CANVAS_W,CANVAS_H);
+  updateAim(x,y);
 });
+shooterCanvas.addEventListener('mousemove',(e)=>{
+  const{x,y}=getScaledCoords(e.clientX,e.clientY,shooterCanvas,420,90);
+  updateAim(x,y,true);
+});
+mainCanvas.addEventListener('click',()=>{if(state.phase==='playing')shoot();});
+shooterCanvas.addEventListener('click',()=>{if(state.phase==='playing')shoot();});
 
-mainCanvas.addEventListener('click', (e) => {
-  if (state.phase === 'playing') shoot();
-});
-shooterCanvas.addEventListener('click', (e) => {
-  if (state.phase === 'playing') shoot();
-});
-
-// Touch — hem aim hem shoot
-function handleTouch(e, element, internalW, internalH, shooterRelY) {
+function handleTouch(e,element,iW,iH,fromShooter){
   e.preventDefault();
-  if (state.phase !== 'playing') return;
-  const touch = e.touches[0] || e.changedTouches[0];
-  const { x: mx, y: my } = getScaledCoords(touch.clientX, touch.clientY, element, internalW, internalH);
-  const dx = mx - 210;
-  const dy = my - shooterRelY;
-  let angle = Math.atan2(dy, dx);
-  angle = Math.max(-Math.PI + 0.2, Math.min(-0.2, angle));
-  state.aimAngle = angle;
+  if(state.phase!=='playing')return;
+  const t=e.touches[0]||e.changedTouches[0];
+  const{x,y}=getScaledCoords(t.clientX,t.clientY,element,iW,iH);
+  updateAim(x,y,fromShooter);
   shoot();
 }
-
-mainCanvas.addEventListener('touchstart', (e) => {
-  handleTouch(e, mainCanvas, CANVAS_W, CANVAS_H, CANVAS_H - 20);
-}, { passive: false });
-
-shooterCanvas.addEventListener('touchstart', (e) => {
-  handleTouch(e, shooterCanvas, 420, 90, 70);
-}, { passive: false });
+mainCanvas.addEventListener('touchstart',(e)=>handleTouch(e,mainCanvas,CANVAS_W,CANVAS_H,false),{passive:false});
+shooterCanvas.addEventListener('touchstart',(e)=>handleTouch(e,shooterCanvas,420,90,true),{passive:false});
 
 // ============================================================
 // Play button
 // ============================================================
-document.getElementById('play-btn').addEventListener('click', () => {
-  const bet = BET_STEPS[state.betIndex];
-  if (state.balance < bet) {
-    alert('Yetersiz bakiye!');
-    return;
-  }
-  if (state.phase === 'playing' || state.phase === 'shooting' || state.phase === 'win') return;
+document.getElementById('play-btn').addEventListener('click',async()=>{
+  if(state.phase==='playing'||state.phase==='shooting'||state.phase==='win'||state.phase==='waitingApi')return;
+  if(state.balance<=0){showError('Yetersiz bakiye!');return;}
 
-  // Bakiye düşümü artık her atışta yapılıyor — burada sadece kilitle
   setBetLocked(true);
-
   initGrid();
-  
-  state.rowsAdded = 0;
-  state.currentColor = pickNextColor();  // top shooter'da bekliyor
-  state.nextColor = pickNextColor();     // preview'de gösterilen
-  state.projectile = null;
-  state.phase = 'playing';
-  state.particles = [];
-  state.confetti = [];
-  state.goldenCount = 0;
-  state.isGoldenReady = false;
-  state.goldenFlashSlot = -1;
-  state.goldenFlashTime = 0;
-  goldenShockwaves = [];
+  state.currentColor=pickNextColor();
+  state.nextColor=pickNextColor();
+  state.projectile=null;
+  state.phase='playing';
+  state.particles=[];
+  state.confetti=[];
+  state.goldenCount=0;
+  state.isGoldenReady=false;
+  state.goldenFlashSlot=-1;
+  state.goldenFlashTime=0;
+  goldenShockwaves=[];
   drawDiamondSlots();
+  playBgMusic();
 
-  playBgMusic(); // 🎵 Arka plan müziği başlat
-
-  // Info overlay sıfırla
-  const infoOverlay = document.getElementById('info-overlay');
-  infoOverlay.querySelector('.info-title').textContent = '🎰 BUBBLE FORTUNE';
-  infoOverlay.querySelector('.info-text').innerHTML = 'Bahisini belirle ve <strong style="color:#FFD700">OYNA</strong>\'ya bas.<br>3+ aynı renk balonu birleştir<br>ve <strong style="color:#FFD700">çarpanı</strong> kap!';
-  infoOverlay.classList.add('hidden');
-
+  document.getElementById('info-overlay').classList.add('hidden');
   document.getElementById('win-overlay').classList.remove('show');
-  drawDiamondSlots();
   drawPreview();
 });
 
-// Bet controls
-document.getElementById('bet-down').addEventListener('click', () => {
-  if (state.phase === 'playing' || state.phase === 'shooting' || state.phase === 'win') return;
-  if (state.betIndex > 0) { state.betIndex--; updateBetDisplay(); }
+// Bet controls — oyun sırasında kilitli
+document.getElementById('bet-down').addEventListener('click',()=>{
+  if(['playing','shooting','win','waitingApi'].includes(state.phase))return;
+  if(state.betIndex>0){state.betIndex--;updateBetDisplay();}
 });
-document.getElementById('bet-up').addEventListener('click', () => {
-  if (state.phase === 'playing' || state.phase === 'shooting' || state.phase === 'win') return;
-  if (state.betIndex < BET_STEPS.length-1) { state.betIndex++; updateBetDisplay(); }
+document.getElementById('bet-up').addEventListener('click',()=>{
+  if(['playing','shooting','win','waitingApi'].includes(state.phase))return;
+  if(state.betIndex<BET_STEPS.length-1){state.betIndex++;updateBetDisplay();}
 });
 
-// Ses aç/kapat
-document.getElementById('mute-btn').addEventListener('click', () => {
-  audio.enabled = !audio.enabled;
-  document.getElementById('mute-btn').textContent = audio.enabled ? '🔊' : '🔇';
-  if (!audio.enabled) {
-    audio.bg?.pause();
-  } else if (state.phase === 'playing' || state.phase === 'shooting' || state.phase === 'win') {
-    audio.bg?.play().catch(() => {});
-  }
+// Mute
+document.getElementById('mute-btn').addEventListener('click',()=>{
+  audio.enabled=!audio.enabled;
+  document.getElementById('mute-btn').textContent=audio.enabled?'🔊':'🔇';
+  if(!audio.enabled)audio.bg?.pause();
+  else if(['playing','shooting','win'].includes(state.phase))audio.bg?.play().catch(()=>{});
 });
 
 // ============================================================
-// Main game loop
+// Game loop
 // ============================================================
-function gameLoop() {
-  if (state.phase === 'shooting') {
-    updateProjectile();
-  }
+function gameLoop(){
+  if(state.phase==='shooting')updateProjectile();
   updateParticles();
   updateConfetti();
   updateGoldenShockwaves();
@@ -2140,48 +1701,31 @@ function gameLoop() {
 }
 
 // ============================================================
-// Init
+// Mobil ölçekleme
 // ============================================================
-updateBalanceDisplay();
+function scaleGame(){
+  const wrapper=document.getElementById('game-wrapper');
+  const GAME_W=420,GAME_H=wrapper.scrollHeight||750;
+  const scale=Math.min(window.innerWidth/GAME_W,window.innerHeight/GAME_H,1);
+  wrapper.style.transform=`scale(${scale})`;
+  wrapper.style.transformOrigin='top center';
+  wrapper.style.marginTop=Math.max(0,(window.innerHeight-GAME_H*scale)/2)+'px';
+}
+scaleGame();
+window.addEventListener('resize',scaleGame);
+window.addEventListener('orientationchange',()=>setTimeout(scaleGame,300));
+
+// ============================================================
+// Başlangıç
+// ============================================================
 updateBetDisplay();
 drawDiamondSlots();
-
-// Draw empty field preview
 initGrid();
 drawGrid();
 drawShooter();
 
-// ============================================================
-// Mobil Ölçekleme — oyunu her zaman ekrana sığdır
-// ============================================================
-function scaleGame() {
-  const wrapper = document.getElementById('game-wrapper');
-  const GAME_W = 420;
-
-  // Oyunun gerçek yüksekliğini ölç (render sonrası)
-  const GAME_H = wrapper.scrollHeight || 750;
-
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-
-  // Hem genişliğe hem yüksekliğe göre scale hesapla, küçüğünü al
-  const scaleX = vw / GAME_W;
-  const scaleY = vh / GAME_H;
-  const scale  = Math.min(scaleX, scaleY, 1); // Masaüstünde 1'i geçme
-
-  wrapper.style.transform = `scale(${scale})`;
-  wrapper.style.transformOrigin = 'top center';
-
-  // Body'i dikeyde ortala (scale sonrası boşluk kalabilir)
-  const scaledH = GAME_H * scale;
-  const marginTop = Math.max(0, (vh - scaledH) / 2);
-  wrapper.style.marginTop = marginTop + 'px';
-}
-
-scaleGame();
-window.addEventListener('resize', scaleGame);
-// Mobilde adres çubuğu kaybolunca tekrar hesapla
-window.addEventListener('orientationchange', () => setTimeout(scaleGame, 300));
+// Backend'den bakiye yükle
+loadBalance();
 
 gameLoop();
 </script>
