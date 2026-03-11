@@ -758,19 +758,20 @@ async function loadBalance() {
 //   },
 //   isGolden: false      — bu spin pırlanta topuydu mu?
 // }
-// GÜVENLİK: Frontend sadece bet gönderir.
-// Backend P_cluster ile clustered/isGolden kararını kendisi verir.
-// Dönen { clustered, isGolden } değerleri yalnızca animasyon içindir.
-async function callSpin(bet) {
+// GÜVENLİK (C şıkkı):
+//   - Frontend { bet, clustered } gönderir
+//   - clustered: gerçek balon tespiti (popped >= 3)
+//   - isGolden: backend DB'den karar verir, buradan gönderilmez
+async function callSpin(bet, clustered) {
   if (DEV_MODE) {
-    return devModeSpin(bet);
+    return devModeSpin(bet, clustered);
   }
 
   setSpinnerVisible(true);
   try {
     const data = await apiFetch('/game/spin', {
       method: 'POST',
-      body: JSON.stringify({ bet }),
+      body: JSON.stringify({ bet, clustered }),
     });
     return data;
   } finally {
@@ -778,14 +779,13 @@ async function callSpin(bet) {
   }
 }
 
-// Dev modda backend'siz simülasyon — backend ile aynı P_cluster=0.26 mantığı
-function devModeSpin(bet) {
-  const P_CLUSTER = 0.26;
+// Dev modda backend'siz simülasyon — C şıkkı ile aynı mantık
+function devModeSpin(bet, frontendClustered) {
   const P_DIAMOND = 0.296;
   const DIAMONDS_NEEDED = 3;
 
-  const isGolden = state.goldenCount >= DIAMONDS_NEEDED;
-  const clustered = !isGolden && (Math.random() < P_CLUSTER);
+  const isGolden  = state.goldenCount >= DIAMONDS_NEEDED;
+  const clustered = !isGolden && !!frontendClustered;
 
   state.balance = Math.max(0, state.balance - bet);
 
@@ -1344,11 +1344,11 @@ async function landProjectile(row,col){
   const{count:popped}=popCluster(row,col);
   const bet=BET_STEPS[state.betIndex];
 
-  // Backend'e sadece bet gönder — clustered/isGolden kararı backend'de
+  // Backend'e bet + clustered gönder; isGolden backend DB'den belirler
   state.phase='waitingApi';
   let spinResult=null;
   try{
-    spinResult=await callSpin(bet);
+    spinResult=await callSpin(bet, popped>=3);
   }catch(err){
     if(err.message==='SESSION_EXPIRED')return;
     showError('Bağlantı hatası — tekrar deniyor...');
@@ -1445,8 +1445,9 @@ async function triggerGoldenExplosion(centerRow,centerCol){
   state.phase='waitingApi';
   let spinResult=null;
   try{
-    // Backend isGolden=true olduğunu session'daki diamond_count>=3'ten biliyor
-    spinResult=await callSpin(bet);
+    // Backend isGolden=true olduğunu DB'deki diamond_count>=3'ten biliyor
+    // Golden atışta balon cluster'ı olmaz — clustered=false
+    spinResult=await callSpin(bet, false);
   }catch(err){
     if(err.message==='SESSION_EXPIRED')return;
     showError('Bağlantı hatası');
